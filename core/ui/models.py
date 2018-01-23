@@ -4,7 +4,7 @@ import uuid
 from os import path
 from os import linesep
 from __future__ import with_statement
-
+import ConfigParser
 
 class Visibility:
     VISIBLE = 0
@@ -311,4 +311,8 @@ class ControlsHtml(object):
 class Container(UIElement):
     def __init__(self, name):
         UIElement.__init__(self, name)
+        self._config = ConfigParser.ConfigParser()
+        self._config.read(path.expanduser('~/.ui_builder.cfg'))
+        self._name = name
+
 
