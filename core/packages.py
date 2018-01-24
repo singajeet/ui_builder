@@ -1,4 +1,8 @@
 import ConfigParser
+import uuid
+import os
+import zipfile
+
 
 PACKAGE_MANAGER='PackageManager'
 PKG_DROP_IN_LOC='package_drop_in_loc'
@@ -10,7 +14,14 @@ class PackageManager(object):
 
     def __init__(self):
         """TODO: to be defined1. """
-        pass
+        self.id = uuid.uuid4()
+        self._config = ConfigParser.ConfigParser()
+        self._config.read(os.path.expanduser('~/.uo_builder'))
+        self._pkg_install_location = self._config.get(PACKAGE_MANAGER, PKG_INSTALL_LOC)
+        self._archive_mgr = ArchiveManager()
+
+    def get_archive_files_list(self):
+
 
 class ArchiveManager(object):
 
@@ -18,7 +29,8 @@ class ArchiveManager(object):
 
     def __init__(self):
         """TODO: to be defined1. """
-        self._config = ConfigManager.ConfigManager()
+        self.id = uuid.uuid4()
+        self._config = ConfigParser.ConfigParser()
         self._config.read(os.path.expanduser('~/.ui_builder.cfg'))
         self._archive_drop_location = self._config.get(PACKAGE_MANAGER, PKG_DROP_IN_LOC)
         self._archive_file_list = None
@@ -65,7 +77,7 @@ class ArchiveManager(object):
         for file in os.listdir(self.archive_drop_location):
             if os.path.isfile(file):
                 try:
-                    self._validate_file(file)
+                    util.validate_file(file)
                     self.archive_file_list.append(file)
                 except:
                     print('Invalid file and is skipped...{0}'.format(file))

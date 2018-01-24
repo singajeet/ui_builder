@@ -1,10 +1,11 @@
 # Script: models.py
 # Author: Ajeet Singh
+from __future__ import with_statement
 import uuid
 from os import path
 from os import linesep
-from __future__ import with_statement
 import ConfigParser
+from .. import utils
 
 class Visibility:
     VISIBLE = 0
@@ -198,7 +199,7 @@ class ControlsHtml(object):
         self._start_html = None
         self._end_html = None
         self._css = None
-        self._file_path = self._validate_file(file)
+        self._file_path = utils.validate_file(file)
         self.load()
 
     def load(self):
@@ -247,7 +248,7 @@ class ControlsHtml(object):
         def fget(self):
             return self._file_path
         def fset(self, value):
-            self._file_path = self._validate_file(value)
+            self._file_path = utils.validate_file(value)
         def fdel(self):
             del self._file_path
         return locals()
@@ -256,19 +257,6 @@ class ControlsHtml(object):
     def get_html_as_template(self):
         return self._start_html + '{0}' + self._end_html
 
-    def _validate_file(self, file):
-        """TODO: Docstring for _validate_file.
-
-        :file: TODO
-        :returns: TODO
-
-        """
-        if path.exists(file):
-            if path.getsize(file) <= 0 or path.isfile(path)==False:
-                raise IOError('Can''t open file {0}'.format(file))
-        else:
-            raise IOError('File not found {0}'.format(file))
-
     def load_html(self, file):
         """TODO: Docstring for load_html.
 
@@ -276,7 +264,7 @@ class ControlsHtml(object):
         :returns: TODO
 
         """
-        self._validate_file(file)
+        utils.validate_file(file)
         with open(file) as f:
             counter = 0
             break_found=False
@@ -302,7 +290,7 @@ class ControlsHtml(object):
 
         """
         file += '.css'
-        self._validate_file(file)
+        utils.validate_file(file)
         with open(file) as f:
             for line in f:
                 self.css += line
