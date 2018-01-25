@@ -199,11 +199,11 @@ class PackageManager(object):
 
     """Docstring for PackageManager. """
 
-    def __init__(self):
+    def __init__(self, conf_path):
         """TODO: to be defined1. """
         self.id = uuid.uuid4()
         self._config = ConfigParser.ConfigParser()
-        self._config.read(os.path.expanduser('~/.ui_builder'))
+        self._config.read(os.path.join(conf_path,'ui_builder'))
         self.pkg_install_location = self._config.get(PACKAGE_MANAGER, PKG_INSTALL_LOC)
         self.archive_manager = ArchiveManager()
 
@@ -248,7 +248,8 @@ class PackageManager(object):
         :returns: TODO
 
         """
-        pass
+        self._get_archive_files_list()
+        self.install_packages()
 
     def activate_packages(self):
         """TODO: Docstring for activate_packages.
@@ -282,7 +283,8 @@ class PackageManager(object):
         :returns: TODO
 
         """
-        pass
+        for file in self.archive_files:
+            self._extract_package(file)
 
     def install_package(self, package_id):
         """TODO: Docstring for install_package.
@@ -300,7 +302,7 @@ class PackageManager(object):
         :returns: TODO
 
         """
-        pass
+        zip_pkg = zipfile.ZipFile.open(file)
 
     def _validate_package(self, arg1):
         """TODO: Docstring for validate_package.
@@ -323,11 +325,11 @@ class ArchiveManager(object):
 
     """Docstring for ArchiveManager. """
 
-    def __init__(self):
+    def __init__(self, conf_path):
         """TODO: to be defined1. """
         self.id = uuid.uuid4()
         self._config = ConfigParser.ConfigParser()
-        self._config.read(os.path.expanduser('~/.ui_builder.cfg'))
+        self._config.read(os.path.join(conf_path, 'ui_builder.cfg'))
         self.archive_drop_location = self._config.get(PACKAGE_MANAGER, PKG_DROP_IN_LOC)
         self.archive_file_list = None
 
