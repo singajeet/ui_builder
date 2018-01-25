@@ -1,0 +1,8 @@
+[Details]
+Name=MyTestPackage
+Description=A test package file for ui builder
+Type=Controls
+Author=Ajeet Singh
+Version=1.0.0.0
+Company=Armin Inc
+Components=Button, TextBox

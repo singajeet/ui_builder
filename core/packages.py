@@ -36,7 +36,7 @@ class Component(object):
 
     """Docstring for Component. """
 
-    def __init__(self, name):
+    def __init__(self, name, path):
         """TODO: to be defined1. """
         self.id = uuid.uuid4()
         self.name = None
@@ -44,7 +44,9 @@ class Component(object):
         self.type = None
         self.author = None
         self.version = None
-        self.template_path = '{0}.comp'.format(name)
+        self._base_path = path
+        self.template_path = os.path.join(self._base_path, '{0}.html'.format(name))
+        self.config_path = os.path.join(self._base_path,'{0}.comp'.format(self.name))
         self.security_id = None
 
     def load_component(self):
@@ -53,7 +55,7 @@ class Component(object):
 
         """
         self.config_file = ConfigParser.ConfigParser()
-        self.config_file.read('{0}.comp'.format(self.name))
+        self.config_file.read(self.config_path)
         if self.name != self.config_file.get('Details', 'Name'):
             raise NameError('Can not load component as filename[{0}] and name in config does not match'.format(self.name))
 
@@ -153,7 +155,8 @@ class Package(object):
 
         if self._comp_name_list is not None:
             for comp_name in self._comp_name_list:
-                comp = Component(comp_name.strip())
+                comp_path = os.path.join(self.location, comp_name.strip())
+                comp = Component(comp_name, comp_path)
                 comp.load_component()
                 self._components[comp_name] = comp
                 self._comp_name_id_map[comp.id] = comp
