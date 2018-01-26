@@ -1,3 +1,4 @@
+import utils
 import ConfigParser
 import uuid
 import os
@@ -203,7 +204,7 @@ class PackageManager(object):
         """TODO: to be defined1. """
         self.id = uuid.uuid4()
         self._config = ConfigParser.ConfigParser()
-        self._config.read(os.path.join(conf_path,'ui_builder'))
+        self._config.read(os.path.join(conf_path,'ui_builder.cfg'))
         self.pkg_install_location = self._config.get(PACKAGE_MANAGER, PKG_INSTALL_LOC)
         self.archive_manager = ArchiveManager()
 
@@ -302,7 +303,9 @@ class PackageManager(object):
         :returns: TODO
 
         """
-        zip_pkg = zipfile.ZipFile.open(file)
+        zip_pkg = zipfile.ZipFile(file)
+        parent_dir = os.path.dirname(file)
+        zip_pkg.extractall(parent_dir)
 
     def _validate_package(self, arg1):
         """TODO: Docstring for validate_package.
@@ -330,7 +333,7 @@ class ArchiveManager(object):
         self.id = uuid.uuid4()
         self._config = ConfigParser.ConfigParser()
         self._config.read(os.path.join(conf_path, 'ui_builder.cfg'))
-        self.archive_drop_location = self._config.get(PACKAGE_MANAGER, PKG_DROP_IN_LOC)
+        self.archive_drop_location = os.path.abspath(self._config.get(PACKAGE_MANAGER, PKG_DROP_IN_LOC))
         self.archive_file_list = None
 
     def archive_drop_location():
@@ -365,15 +368,14 @@ class ArchiveManager(object):
             file_path = os.path.join(self.archive_drop_location, file)
             if os.path.isfile(file_path):
                 try:
-                    util.validate_file(file_path)
+                    utils.validate_file(file_path)
                     if zipfile.is_zipfile(file_path):
                         self.archive_file_list.append(file_path)
                     else:
                         print('File is not zipped and is skipped...{0}'.format(file))
-                except:
+                except Exception as msg:
                     print('Invalid file and is skipped...{0}'.format(file))
             else:
                 print('Not a file and is skipped...{0}'.format(file))
 
-            return self.archive_file_list
-
+        return self.archive_file_list
