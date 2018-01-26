@@ -4,11 +4,16 @@ import uuid
 import os
 import zipfile
 from jinja2 import BaseLoader,TemplateNotFound,Template,Environment
+import logging
+import init_log
 
 
 PACKAGE_MANAGER='PackageManager'
 PKG_DROP_IN_LOC='package_drop_in_loc'
 PKG_INSTALL_LOC='package_install_loc'
+
+init_log.config_logs()
+logger = logging.getLogger(__name__)
 
 class ComponentLoader(BaseLoader):
 
@@ -55,16 +60,20 @@ class Component(object):
         :returns: TODO
 
         """
+        logger.debug('Loading config...{0}'.format(self.config_path))
         self.config_file = ConfigParser.ConfigParser()
         self.config_file.read(self.config_path)
         if self.name != self.config_file.get('Details', 'Name'):
-            raise NameError('Can not load component as filename[{0}] and name in config does not match'.format(self.name))
+            err = 'Can not load component as filename[{0}] and name in config does not match'.format(self.name)
+            logger.error(err)
+            raise NameError(err)
 
         self.description = self.config_file.get('Details', 'Description')
         self.type = self.config_file.get('Details', 'Type')
         self.author = self.config_file.get('Details', 'Author')
         self.version = self.config_file.get('Details', 'Version')
         self.template_env = Environment(loader = ComponentLoader(self.template_path))
+        logger.info('Component loaded successfully...{0}'.format(self.name))
 
 
 class Package(object):
@@ -114,15 +123,19 @@ class Package(object):
         :returns: TODO
 
         """
+        logger.debug('Looking for pkg file in...{0}'.format(self.location))
         temp_pkg_files = os.path.listdir(self.location)
         conf_file = ''
         for f in temp_pkg_files:
             if d.endswith('.pkg'):
                 conf_file = f
+                logger.debug('{0} pkg file found'.format(f))
                 break
 
         if conf_file == '':
-            raise NameError('No config file found for this package')
+            err = 'No config file found for this package'
+            logger.error(err)
+            raise NameError(err)
         else:
             self.config_file = ConfigParser.ConfigParser()
             self.config_file.read(os.path.join(self.location, conf_file))
@@ -134,6 +147,7 @@ class Package(object):
             self.version = self.config_file.get('Details', 'Version')
             self.company = self.config_file.get('Details', 'Company')
             self._comp_name_list = self.config_file.get('Details', 'Components').split(',')
+            logger.info('Package details loaded successfully...{0}'.format(self.name))
 
     def get_comp_name_list(self):
         """TODO: Docstring for get_comp_name_list.
@@ -161,8 +175,11 @@ class Package(object):
                 comp.load_component()
                 self._components[comp_name] = comp
                 self._comp_name_id_map[comp.id] = comp
+                logger.debug('Component with Name:{0} and Id:{1} loaded successfully'.format(comp_name, comp.id))
         else:
-            raise Exception('Can not load components of package...{0}'.format(self.name))
+            err = 'Can not load components of package...{0}'.format(self.name)
+            logger.error(err)
+            raise Exception(err)
 
     def get_components(self):
         """TODO: Docstring for get_components.
@@ -202,11 +219,13 @@ class PackageManager(object):
 
     def __init__(self, conf_path):
         """TODO: to be defined1. """
+        logger.debug('Trying to load conf for PkgManager from...{0}'.format(conf_path))
         self.id = uuid.uuid4()
         self._config = ConfigParser.ConfigParser()
         self._config.read(os.path.join(conf_path,'ui_builder.cfg'))
         self.pkg_install_location = self._config.get(PACKAGE_MANAGER, PKG_INSTALL_LOC)
-        self.archive_manager = ArchiveManager()
+        logger.debug('Pkg installation location is ...{0}'.format(self.pkg_install_location))
+        self.archive_manager = ArchiveManager(conf_path)
 
     def pkg_install_location():
         doc = "The pkg_install_location property."
@@ -303,9 +322,12 @@ class PackageManager(object):
         :returns: TODO
 
         """
+        logger.debug('Extracting pkg...{0}'.format(file))
+        pkg_overwrite_mode = self._config.get(PACKAGE_MANAGER, PKG_OVERWRITE_MODE)
         zip_pkg = zipfile.ZipFile(file)
         parent_dir = os.path.dirname(file)
         zip_pkg.extractall(parent_dir)
+        logger.debug('Pkg extracted to...{0}'.format(parent_dir))
 
     def _validate_package(self, arg1):
         """TODO: Docstring for validate_package.
@@ -372,10 +394,10 @@ class ArchiveManager(object):
                     if zipfile.is_zipfile(file_path):
                         self.archive_file_list.append(file_path)
                     else:
-                        print('File is not zipped and is skipped...{0}'.format(file))
+                        logger.debug('File is not zipped and is skipped...{0}'.format(file))
                 except Exception as msg:
-                    print('Invalid file and is skipped...{0}'.format(file))
+                    logger.warn('Invalid file and is skipped...{0}'.format(file))
             else:
-                print('Not a file and is skipped...{0}'.format(file))
+                logger.debug('Not a file and is skipped...{0}'.format(file))
 
         return self.archive_file_list

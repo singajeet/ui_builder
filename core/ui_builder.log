@@ -1,0 +1,9 @@
+2018-01-26 21:43:16,785 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-26 21:43:16,786 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-26 21:43:16,788 - packages - DEBUG - Not a file and is skipped...Button
+2018-01-26 21:43:16,791 - packages - DEBUG - Not a file and is skipped...TextBox
+2018-01-26 21:43:16,802 - packages - DEBUG - File is not zipped and is skipped...MyTestPackage.pkg
+2018-01-26 22:15:55,731 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-26 22:15:55,735 - packages - DEBUG - Pkg installation location is ...tests/installed_pkgs
+2018-01-26 22:19:01,360 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-26 22:19:01,364 - packages - DEBUG - Pkg installation location is ...tests/installed_pkgs
