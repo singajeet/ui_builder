@@ -10,7 +10,7 @@ import shutil
 import glob
 from tinydb import TinyDB, Query
 
-PACKAGE_MANAGER='PackageManager'
+PACKAGE_INSTALLER='PackageInstaller'
 PKG_DROP_IN_LOC='package_drop_in_loc'
 PKG_INSTALL_LOC='package_install_loc'
 PKG_OVERWRITE_MODE='pkg_overwrite_mode'
@@ -24,9 +24,9 @@ class ComponentLoader(BaseLoader):
 
     """Docstring for ComponentLoader. """
 
-    def __init__(self):
+    def __init__(self, path):
         """TODO: to be defined1. """
-        BaseLoader.__init__(self, path)
+        BaseLoader.__init__(self)
         self.path = path
 
     def get_source(self, environment, template):
@@ -49,8 +49,8 @@ class Component(object):
 
     def __init__(self, name, path):
         """TODO: to be defined1. """
-        self.id = str(uuid.uuid4())
-        self.name = None
+        self.id = None
+        self.name = name
         self.description = None
         self.type = None
         self.author = None
@@ -68,7 +68,6 @@ class Component(object):
         :returns: TODO
 
         """
-        logger.debug('Loading config...{0}'.format(self.config_path))
         self.config_file = ConfigParser.ConfigParser()
         self.config_file.read(self.config_path)
         if self.name != self.config_file.get('Details', 'Name'):
@@ -76,6 +75,7 @@ class Component(object):
             logger.error(err)
             raise NameError(err)
 
+        self.id = self.config_file.get('Details', 'Id')
         self.description = self.config_file.get('Details', 'Description')
         self.type = self.config_file.get('Details', 'Type')
         self.author = self.config_file.get('Details', 'Author')
@@ -90,7 +90,7 @@ class Package(object):
 
     def __init__(self, location=None):
         """TODO: to be defined1. """
-        self.id = str(uuid.uuid4())
+        self.id = None
         self.location = location
         self.config_file = None
         self.name = None
@@ -171,6 +171,7 @@ class Package(object):
         else:
             self.config_file = ConfigParser.ConfigParser()
             self.config_file.read(os.path.join(self.location, conf_file))
+            self.id = self.config_file.get('Details', 'Id')
             self.name = self.config_file.get('Details', 'Name')
             self.description = self.config_file.get('Details', 'Description')
             self.type = self.config_file.get('Details', 'Type')
@@ -182,6 +183,29 @@ class Package(object):
             logger.info('Package details loaded successfully...{0}'.format(self.name))
             logger.debug('Registring child components now...')
             self._load_child_comp_config()
+
+
+    def _load_child_comp_config(self):
+        """TODO: Docstring for load_components.
+        :returns: TODO
+
+        """
+        if self._comp_name_list is None:
+            self._load_pkg_config()
+
+        if self._comp_name_list is not None:
+            for comp_name in self._comp_name_list:
+                comp_path = os.path.join(self.location, comp_name.strip())
+                comp = Component(comp_name.strip(), comp_path)
+                comp.parent_id = self.id
+                comp._load_component_config()
+                self._components[comp_name] = comp
+                self._comp_name_id_map[comp.id] = comp_name
+                logger.debug('Component with Name:{0} and Id:{1} loaded successfully'.format(comp_name, comp.id))
+        else:
+            err = 'Can not load components of package...{0}'.format(self.name)
+            logger.error(err)
+            raise Exception(err)
 
     def load_details(self, arg1):
         """TODO: Docstring for load_details.
@@ -202,30 +226,6 @@ class Package(object):
         else:
             self.load_details()
             return self._comp_name_list
-
-    def _load_child_comp_config(self):
-        """TODO: Docstring for load_components.
-        :returns: TODO
-
-        """
-        if self._comp_name_list is None:
-            self._load_pkg_config()
-
-        if self._comp_name_list is not None:
-            logger.debug('Components list for this pkg...{0}'.format(self._comp_name_list))
-            for comp_name in self._comp_name_list:
-                logger.debug('Building component...{0} with config at...{1}'.format(comp_name.strip(), self.location))
-                comp_path = os.path.join(self.location, comp_name.strip())
-                comp = Component(comp_name.strip(), comp_path)
-                comp.parent_id = self.id
-                comp._load_component_config()
-                self._components[comp_name] = comp
-                self._comp_name_id_map[comp.id] = comp
-                logger.debug('Component with Name:{0} and Id:{1} loaded successfully'.format(comp_name, comp.id))
-        else:
-            err = 'Can not load components of package...{0}'.format(self.name)
-            logger.error(err)
-            raise Exception(err)
 
     def get_components(self):
         """TODO: Docstring for get_components.
@@ -260,21 +260,63 @@ class Package(object):
             return None
 
 class PackageManager(object):
+    def load_packages(self):
+        """TODO: Docstring for load_packages.
+        :returns: TODO
 
-    """Docstring for PackageManager. """
+        """
+
+    def activate_packages(self):
+        """TODO: Docstring for activate_packages.
+
+        :arg1: TODO
+        :returns: TODO
+
+        """
+        pass
+
+    def activate_package(self, package_id):
+        """TODO: Docstring for activate_package.
+        :returns: TODO
+
+        """
+        pass
+
+    def deactivate_package(self, package_id):
+        """TODO: Docstring for deactivate_package.
+
+        :package_id: TODO
+        :returns: TODO
+
+        """
+        pass
+
+    def install_package(self, package_id):
+        """TODO: Docstring for install_package.
+
+        :package_id: TODO
+        :returns: TODO
+
+        """
+        pass
+
+
+class PackageInstaller(object):
+
+    """Docstring for PackageInstaller. """
 
     def __init__(self, conf_path):
         """TODO: to be defined1. """
-        logger.debug('Trying to load conf for PkgManager from...{0}'.format(conf_path))
-        self.id = uuid.uuid4()
+        logger.debug('Loading PackageInstaller Configuration...{0}'.format(conf_path))
+        self.id = None
         self._config = ConfigParser.ConfigParser()
         self._config.read(os.path.join(conf_path,'ui_builder.cfg'))
-        self.pkg_install_location = os.path.abspath(self._config.get(PACKAGE_MANAGER, PKG_INSTALL_LOC))
-        logger.debug('Pkg installation location is ...{0}'.format(self.pkg_install_location))
+        self.pkg_install_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_INSTALL_LOC))
+        logger.debug('Packages will be installed in following location...{0}'.format(self.pkg_install_location))
         self.archive_manager = ArchiveManager(conf_path)
 
         global UI_BUILDER_DB_PATH
-        UI_BUILDER_DB_PATH = self._config.get(PACKAGE_MANAGER, UI_BUILDER_DB)
+        UI_BUILDER_DB_PATH = self._config.get(PACKAGE_INSTALLER, UI_BUILDER_DB)
 
     def pkg_install_location():
         doc = "The pkg_install_location property."
@@ -312,39 +354,6 @@ class PackageManager(object):
     def _get_archive_files_list(self):
         self.archive_files = self.archive_manager.load_archives()
 
-    def load_packages(self):
-        """TODO: Docstring for load_packages.
-        :returns: TODO
-
-        """
-        self._get_archive_files_list()
-        self.install_packages()
-
-    def activate_packages(self):
-        """TODO: Docstring for activate_packages.
-
-        :arg1: TODO
-        :returns: TODO
-
-        """
-        pass
-
-    def activate_package(self, package_id):
-        """TODO: Docstring for activate_package.
-        :returns: TODO
-
-        """
-        pass
-
-    def deactivate_package(self, package_id):
-        """TODO: Docstring for deactivate_package.
-
-        :package_id: TODO
-        :returns: TODO
-
-        """
-        pass
-
     def install_packages(self):
         """TODO: Docstring for install_packages.
 
@@ -352,6 +361,7 @@ class PackageManager(object):
         :returns: TODO
 
         """
+        self._get_archive_files_list()
         for file in self.archive_files:
             pkg_path = self._extract_package(file)
             pkg = self._validate_package(pkg_path)
@@ -361,15 +371,6 @@ class PackageManager(object):
             else:
                 logger.info('Package from following file is installed...{0}'.format(pkg_path))
 
-    def install_package(self, package_id):
-        """TODO: Docstring for install_package.
-
-        :package_id: TODO
-        :returns: TODO
-
-        """
-        pass
-
     def _extract_package(self, file):
         """TODO: Docstring for extract_package.
 
@@ -377,12 +378,12 @@ class PackageManager(object):
         :returns: TODO
 
         """
-        logger.debug('Extracting pkg...{0}'.format(file))
-        pkg_overwrite_mode = self._config.get(PACKAGE_MANAGER, PKG_OVERWRITE_MODE)
+        logger.debug('Extracting package content...{0}'.format(file))
+        pkg_overwrite_mode = self._config.get(PACKAGE_INSTALLER, PKG_OVERWRITE_MODE)
         pkg_file_name = os.path.basename(file)
         pkg_dir_name = os.path.join(self.pkg_install_location, pkg_file_name.rstrip('.zip'))
-        if pkg_overwrite_mode == 'on':
-            logger.info('Overwrite mode is on, pkg content will be replaced with new files')
+        if pkg_overwrite_mode.upper() == 'on'.upper():
+            logger.info('Overwrite mode is on, package content will be replaced with new files')
             if os.path.exists(pkg_dir_name):
                 shutil.rmtree(pkg_dir_name)
 
@@ -425,7 +426,6 @@ class PackageManager(object):
         db = TinyDB(UI_BUILDER_DB_PATH)
         q = Query()
         pkg_table = db.table('Packages')
-        logger.debug('Packages table has been opened')
         pkg.is_enabled = True
         pkg.is_installed = True
         pkg_details = pkg.__dict__.copy()
@@ -433,13 +433,16 @@ class PackageManager(object):
         pkg_details['_config_file'] = None
         pkg_details['_components'] = None
         pkg_entry = pkg_table.upsert({'Location':pkg._location, 'Details':pkg_details}, q.id == pkg.id)
-        logger.debug('Package with name {0} and id {1} has been registered'.format(pkg.name, pkg.id))
+        logger.debug('Package with name [{0}] and id [{1}] has been registered'.format(pkg.name, pkg.id))
         logger.debug('Processing child components now...')
         comp_table = db.table('Components')
-        for comp in pkg._components:
+        for name, comp in pkg._components.iteritems():
             comp_details = comp.__dict__.copy()
+            comp_details['config_file'] = None
+            comp_details['template_env'] = None
             comp_q = Query()
-            comp_entry = comp_table.upsert({'Location':comp_details.base_path, 'Details':comp_details}, comp_q.id == comp.id)
+            comp_entry = comp_table.upsert({'Location':comp.base_path, 'Details':comp_details}, comp_q.id == comp.id)
+            logger.debug('Component with name [{0}] and id [{1}] has been registered under package [{2}]'.format(comp.name, comp.id, pkg.name))
         return True
 
 
@@ -452,7 +455,7 @@ class ArchiveManager(object):
         self.id = uuid.uuid4()
         self._config = ConfigParser.ConfigParser()
         self._config.read(os.path.join(conf_path, 'ui_builder.cfg'))
-        self.archive_drop_location = os.path.abspath(self._config.get(PACKAGE_MANAGER, PKG_DROP_IN_LOC))
+        self.archive_drop_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_DROP_IN_LOC))
         self.archive_file_list = None
 
     def archive_drop_location():

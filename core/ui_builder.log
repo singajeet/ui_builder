@@ -65,3 +65,226 @@
 2018-01-27 22:11:10,118 - packages - DEBUG - Building component...Button with config at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
 2018-01-27 22:11:10,119 - packages - DEBUG - Loading config.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/Button/Button.comp
 2018-01-27 22:11:10,121 - packages - ERROR - Can not load component as filename[None] and name in config does not match
+2018-01-27 23:20:40,831 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-27 23:20:40,864 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 23:20:51,078 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 23:20:51,081 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 23:20:51,082 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 23:20:51,082 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 23:20:51,098 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:20:51,098 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:20:51,109 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 23:20:51,109 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:20:51,109 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:20:51,111 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-27 23:20:51,115 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-27 23:20:51,115 - packages - DEBUG - Registring child components now...
+2018-01-27 23:30:58,999 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-27 23:30:59,009 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 23:31:04,424 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 23:31:04,427 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 23:31:04,430 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 23:31:04,430 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 23:31:04,447 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:31:04,447 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:31:04,448 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 23:31:04,450 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:31:04,450 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:31:04,451 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-27 23:31:04,453 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-27 23:31:04,454 - packages - DEBUG - Registring child components now...
+2018-01-27 23:31:16,763 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-27 23:31:16,769 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 23:31:19,323 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 23:31:19,328 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 23:31:19,335 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 23:31:19,335 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 23:31:19,351 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:31:19,351 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:31:19,354 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 23:31:19,355 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:31:19,355 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:31:19,357 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-27 23:31:19,358 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-27 23:31:19,358 - packages - DEBUG - Registring child components now...
+2018-01-27 23:32:29,168 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-27 23:32:29,174 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 23:32:31,615 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 23:32:31,621 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 23:32:31,621 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 23:32:31,622 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 23:32:31,637 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:32:31,638 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:32:31,644 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 23:32:31,644 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:32:31,645 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:32:31,647 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-27 23:32:31,648 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-27 23:32:31,648 - packages - DEBUG - Registring child components now...
+2018-01-27 23:32:31,651 - packages - INFO - Component loaded successfully...Button
+2018-01-27 23:32:31,651 - packages - DEBUG - Component with Name:Button and Id:937cba86-2f5d-45f3-aa87-9249ab8be33c loaded successfully
+2018-01-27 23:32:31,654 - packages - INFO - Component loaded successfully...TextBox
+2018-01-27 23:32:31,654 - packages - DEBUG - Component with Name: TextBox and Id:c39ce50e-0145-42c2-a414-52c561209774 loaded successfully
+2018-01-27 23:32:31,655 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-27 23:32:31,657 - packages - DEBUG - Packages table has been opened
+2018-01-27 23:45:31,520 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-27 23:45:31,529 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 23:45:37,987 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 23:45:37,992 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 23:45:37,993 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 23:45:37,993 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 23:45:38,007 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:45:38,009 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:45:38,010 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 23:45:38,010 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:45:38,012 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:45:38,013 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-27 23:45:38,015 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-27 23:45:38,015 - packages - DEBUG - Registring child components now...
+2018-01-27 23:45:38,016 - packages - INFO - Component loaded successfully...Button
+2018-01-27 23:45:38,017 - packages - DEBUG - Component with Name:Button and Id:09bdc61b-21d3-49e7-a32e-d6f82bc11b5c loaded successfully
+2018-01-27 23:45:38,023 - packages - INFO - Component loaded successfully...TextBox
+2018-01-27 23:45:38,023 - packages - DEBUG - Component with Name: TextBox and Id:c234d1e5-4b42-4342-8521-95a399a86c79 loaded successfully
+2018-01-27 23:45:38,025 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-27 23:45:38,029 - packages - DEBUG - Packages table has been opened
+2018-01-27 23:45:38,029 - packages - DEBUG - pkg_details --> {'_comp_name_list': ['Button', ' TextBox'], '_is_installed': True, '_location': '/home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage', 'description': 'A test package file for ui builder', 'author': 'Ajeet Singh', 'url': 'http://adapt-tech.com', 'company': 'Armin Inc', '_config_file': None, 'id': 'd13c3c67-f136-41f1-a322-5dbff60ebd02', '_components': None, 'version': '1.0.0.0', 'type': 'Controls', '_is_enabled': True, '_comp_name_id_map': {'09bdc61b-21d3-49e7-a32e-d6f82bc11b5c': <packages.Component object at 0x7ef76d2c>, 'c234d1e5-4b42-4342-8521-95a399a86c79': <packages.Component object at 0x7ef76f2c>}, 'name': 'MyTestPackage'}
+2018-01-27 23:48:10,630 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-27 23:48:10,631 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 23:48:13,451 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 23:48:13,456 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 23:48:13,457 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 23:48:13,457 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 23:48:13,471 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:48:13,471 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:48:13,479 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 23:48:13,479 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:48:13,480 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:48:13,480 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-27 23:48:13,483 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-27 23:48:13,483 - packages - DEBUG - Registring child components now...
+2018-01-27 23:48:13,486 - packages - INFO - Component loaded successfully...Button
+2018-01-27 23:48:13,486 - packages - DEBUG - Component with Name:Button and Id:313d5182-df4f-4f94-8767-90fb966d5343 loaded successfully
+2018-01-27 23:48:13,487 - packages - INFO - Component loaded successfully...TextBox
+2018-01-27 23:48:13,489 - packages - DEBUG - Component with Name: TextBox and Id:b1b31a39-f369-4586-ba1f-c2fb3c7b1955 loaded successfully
+2018-01-27 23:48:13,489 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-27 23:48:13,492 - packages - DEBUG - Packages table has been opened
+2018-01-27 23:48:13,492 - packages - DEBUG - pkg_details --> {'_comp_name_list': ['Button', ' TextBox'], '_is_installed': True, '_location': '/home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage', 'description': 'A test package file for ui builder', 'author': 'Ajeet Singh', 'url': 'http://adapt-tech.com', 'company': 'Armin Inc', '_config_file': None, 'id': '8a4a894d-b78c-4c60-90e1-e2474ca1c63a', '_components': None, 'version': '1.0.0.0', 'type': 'Controls', '_is_enabled': True, '_comp_name_id_map': {'313d5182-df4f-4f94-8767-90fb966d5343': 'Button', 'b1b31a39-f369-4586-ba1f-c2fb3c7b1955': ' TextBox'}, 'name': 'MyTestPackage'}
+2018-01-27 23:48:13,493 - packages - DEBUG - Package with name MyTestPackage and id 8a4a894d-b78c-4c60-90e1-e2474ca1c63a has been registered
+2018-01-27 23:48:13,499 - packages - DEBUG - Processing child components now...
+2018-01-27 23:51:23,654 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-27 23:51:23,664 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 23:51:26,170 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 23:51:26,174 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 23:51:26,178 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 23:51:26,178 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 23:51:26,193 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:51:26,194 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:51:26,196 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 23:51:26,196 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:51:26,197 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 23:51:26,197 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-27 23:51:26,200 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-27 23:51:26,200 - packages - DEBUG - Registring child components now...
+2018-01-27 23:51:26,203 - packages - INFO - Component loaded successfully...Button
+2018-01-27 23:51:26,203 - packages - DEBUG - Component with Name:Button and Id:3ee5d624-bc61-4027-b973-db2028ba2697 loaded successfully
+2018-01-27 23:51:26,206 - packages - INFO - Component loaded successfully...TextBox
+2018-01-27 23:51:26,206 - packages - DEBUG - Component with Name: TextBox and Id:ce0bd39d-ccf4-4e06-9318-5cd5f49b95a8 loaded successfully
+2018-01-27 23:51:26,207 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-27 23:51:26,213 - packages - DEBUG - Packages table has been opened
+2018-01-27 23:51:26,216 - packages - DEBUG - pkg_details --> {'_comp_name_list': ['Button', ' TextBox'], '_is_installed': True, '_location': '/home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage', 'description': 'A test package file for ui builder', 'author': 'Ajeet Singh', 'url': 'http://adapt-tech.com', 'company': 'Armin Inc', '_config_file': None, 'id': 'a3f94307-7349-47dd-93d8-c26bcc6aa7f1', '_components': None, 'version': '1.0.0.0', 'type': 'Controls', '_is_enabled': True, '_comp_name_id_map': {'ce0bd39d-ccf4-4e06-9318-5cd5f49b95a8': ' TextBox', '3ee5d624-bc61-4027-b973-db2028ba2697': 'Button'}, 'name': 'MyTestPackage'}
+2018-01-27 23:51:26,220 - packages - DEBUG - Package with name MyTestPackage and id a3f94307-7349-47dd-93d8-c26bcc6aa7f1 has been registered
+2018-01-27 23:51:26,220 - packages - DEBUG - Processing child components now...
+2018-01-28 00:00:26,766 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-28 00:00:26,788 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-28 00:00:34,594 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 00:00:34,598 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 00:00:34,599 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 00:00:34,601 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 00:00:34,612 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:00:34,614 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:00:34,615 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 00:00:34,615 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:00:34,617 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:00:34,618 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 00:00:34,619 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 00:00:34,619 - packages - DEBUG - Registring child components now...
+2018-01-28 00:00:34,622 - packages - INFO - Component loaded successfully...Button
+2018-01-28 00:00:34,624 - packages - DEBUG - Component with Name:Button and Id:8f9ded0d-5607-4d34-aa69-0550ed7652d8 loaded successfully
+2018-01-28 00:00:34,625 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 00:00:34,627 - packages - DEBUG - Component with Name: TextBox and Id:1a8925d4-0c8d-4018-82a3-81700721baa1 loaded successfully
+2018-01-28 00:00:34,627 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 00:00:34,631 - packages - DEBUG - Packages table has been opened
+2018-01-28 00:00:34,631 - packages - DEBUG - pkg_details --> {'_comp_name_list': ['Button', ' TextBox'], '_is_installed': True, '_location': '/home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage', 'description': 'A test package file for ui builder', 'author': 'Ajeet Singh', 'url': 'http://adapt-tech.com', 'company': 'Armin Inc', '_config_file': None, 'id': '61bf9a4c-ac69-43a9-aa3b-6af6a5a9756f', '_components': None, 'version': '1.0.0.0', 'type': 'Controls', '_is_enabled': True, '_comp_name_id_map': {'1a8925d4-0c8d-4018-82a3-81700721baa1': ' TextBox', '8f9ded0d-5607-4d34-aa69-0550ed7652d8': 'Button'}, 'name': 'MyTestPackage'}
+2018-01-28 00:00:34,634 - packages - DEBUG - Package with name MyTestPackage and id 61bf9a4c-ac69-43a9-aa3b-6af6a5a9756f has been registered
+2018-01-28 00:00:34,634 - packages - DEBUG - Processing child components now...
+2018-01-28 00:05:02,338 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-28 00:05:02,351 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-28 00:05:06,257 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 00:05:06,260 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 00:05:06,263 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 00:05:06,265 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 00:05:06,282 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:05:06,282 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:05:06,283 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 00:05:06,285 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:05:06,285 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:05:06,286 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 00:05:06,289 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 00:05:06,289 - packages - DEBUG - Registring child components now...
+2018-01-28 00:05:06,292 - packages - INFO - Component loaded successfully...Button
+2018-01-28 00:05:06,292 - packages - DEBUG - Component with Name:Button and Id:eb2134fc-9655-4aa8-adb7-6e52eef558ed loaded successfully
+2018-01-28 00:05:06,295 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 00:05:06,296 - packages - DEBUG - Component with Name: TextBox and Id:fed0a1cb-e910-4f11-957b-b9fab1a2fa72 loaded successfully
+2018-01-28 00:05:06,296 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 00:05:06,299 - packages - DEBUG - Packages table has been opened
+2018-01-28 00:05:06,299 - packages - DEBUG - pkg_details --> {'_comp_name_list': ['Button', ' TextBox'], '_is_installed': True, '_location': '/home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage', 'description': 'A test package file for ui builder', 'author': 'Ajeet Singh', 'url': 'http://adapt-tech.com', 'company': 'Armin Inc', '_config_file': None, 'id': '171dfd33-1408-41c0-98b2-f7ded6885485', '_components': None, 'version': '1.0.0.0', 'type': 'Controls', '_is_enabled': True, '_comp_name_id_map': {'fed0a1cb-e910-4f11-957b-b9fab1a2fa72': ' TextBox', 'eb2134fc-9655-4aa8-adb7-6e52eef558ed': 'Button'}, 'name': 'MyTestPackage'}
+2018-01-28 00:05:06,303 - packages - DEBUG - Package with name MyTestPackage and id 171dfd33-1408-41c0-98b2-f7ded6885485 has been registered
+2018-01-28 00:05:06,305 - packages - DEBUG - Processing child components now...
+2018-01-28 00:08:48,045 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-28 00:08:48,048 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-28 00:08:50,316 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 00:08:50,322 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 00:08:50,322 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 00:08:50,323 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 00:08:50,336 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:08:50,336 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:08:50,338 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 00:08:50,338 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:08:50,339 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:08:50,342 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 00:08:50,344 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 00:08:50,344 - packages - DEBUG - Registring child components now...
+2018-01-28 00:08:50,346 - packages - INFO - Component loaded successfully...Button
+2018-01-28 00:08:50,346 - packages - DEBUG - Component with Name:Button and Id:39c2021d-015c-4e21-aaf9-d067e0ac9bf1 loaded successfully
+2018-01-28 00:08:50,351 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 00:08:50,351 - packages - DEBUG - Component with Name: TextBox and Id:ea3051cd-d555-42fc-ae23-c147eed1565c loaded successfully
+2018-01-28 00:08:50,355 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 00:08:50,359 - packages - DEBUG - Packages table has been opened
+2018-01-28 00:08:50,361 - packages - DEBUG - pkg_details --> {'_comp_name_list': ['Button', ' TextBox'], '_is_installed': True, '_location': '/home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage', 'description': 'A test package file for ui builder', 'author': 'Ajeet Singh', 'url': 'http://adapt-tech.com', 'company': 'Armin Inc', '_config_file': None, 'id': '84267141-f877-427f-85a7-50e10cabc17e', '_components': None, 'version': '1.0.0.0', 'type': 'Controls', '_is_enabled': True, '_comp_name_id_map': {'39c2021d-015c-4e21-aaf9-d067e0ac9bf1': 'Button', 'ea3051cd-d555-42fc-ae23-c147eed1565c': ' TextBox'}, 'name': 'MyTestPackage'}
+2018-01-28 00:08:50,364 - packages - DEBUG - Package with name MyTestPackage and id 84267141-f877-427f-85a7-50e10cabc17e has been registered
+2018-01-28 00:08:50,365 - packages - DEBUG - Processing child components now...
+2018-01-28 00:08:50,375 - packages - INFO - Package from following file is installed.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:15:44,681 - packages - DEBUG - Loading PackageManager Configuration....
+2018-01-28 00:15:44,686 - packages - DEBUG - Packages will be installed in following location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-28 00:15:48,312 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 00:15:48,316 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 00:15:48,318 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 00:15:48,319 - packages - DEBUG - Extracting package content.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 00:15:48,339 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:15:48,341 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:15:48,349 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 00:15:48,351 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:15:48,351 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 00:15:48,352 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 00:15:48,355 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 00:15:48,355 - packages - DEBUG - Registring child components now...
+2018-01-28 00:15:48,358 - packages - INFO - Component loaded successfully...Button
+2018-01-28 00:15:48,358 - packages - DEBUG - Component with Name:Button and Id:b2dad70a-5e01-431f-b060-0a48ca160ee9 loaded successfully
+2018-01-28 00:15:48,361 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 00:15:48,361 - packages - DEBUG - Component with Name: TextBox and Id:88d2f246-d851-46ff-9378-19ff02bea49b loaded successfully
+2018-01-28 00:15:48,361 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 00:15:48,368 - packages - DEBUG - Package with name [MyTestPackage] and id [ccfb044b-2c3f-4df5-a104-114a646379ab] has been registered
+2018-01-28 00:15:48,368 - packages - DEBUG - Processing child components now...
+2018-01-28 00:15:48,375 - packages - DEBUG - Component with name [TextBox] and id [88d2f246-d851-46ff-9378-19ff02bea49b] has been registered under package [MyTestPackage]
+2018-01-28 00:15:48,380 - packages - DEBUG - Component with name [Button] and id [b2dad70a-5e01-431f-b060-0a48ca160ee9] has been registered under package [MyTestPackage]
+2018-01-28 00:15:48,381 - packages - INFO - Package from following file is installed.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
