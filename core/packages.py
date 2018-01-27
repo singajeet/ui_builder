@@ -6,11 +6,16 @@ import zipfile
 from jinja2 import BaseLoader,TemplateNotFound,Template,Environment
 import logging
 import init_log
-
+import shutil
+import glob
+from tinydb import TinyDB, Query
 
 PACKAGE_MANAGER='PackageManager'
 PKG_DROP_IN_LOC='package_drop_in_loc'
 PKG_INSTALL_LOC='package_install_loc'
+PKG_OVERWRITE_MODE='pkg_overwrite_mode'
+UI_BUILDER_DB = 'ui_builder_db'
+UI_BUILDER_DB_PATH = ''
 
 init_log.config_logs()
 logger = logging.getLogger(__name__)
@@ -44,7 +49,7 @@ class Component(object):
 
     def __init__(self, name, path):
         """TODO: to be defined1. """
-        self.id = uuid.uuid4()
+        self.id = str(uuid.uuid4())
         self.name = None
         self.description = None
         self.type = None
@@ -82,7 +87,7 @@ class Package(object):
 
     def __init__(self, location=None):
         """TODO: to be defined1. """
-        self.id = uuid.uuid4()
+        self.id = str(uuid.uuid4())
         self.location = location
         self.config_file = None
         self.name = None
@@ -223,9 +228,10 @@ class PackageManager(object):
         self.id = uuid.uuid4()
         self._config = ConfigParser.ConfigParser()
         self._config.read(os.path.join(conf_path,'ui_builder.cfg'))
-        self.pkg_install_location = self._config.get(PACKAGE_MANAGER, PKG_INSTALL_LOC)
+        self.pkg_install_location = os.path.abspath(self._config.get(PACKAGE_MANAGER, PKG_INSTALL_LOC))
         logger.debug('Pkg installation location is ...{0}'.format(self.pkg_install_location))
         self.archive_manager = ArchiveManager(conf_path)
+        UI_BUILDER_DB_PATH = self._config.get(PACKAGE_MANAGER, UI_BUILDER_DB)
 
     def pkg_install_location():
         doc = "The pkg_install_location property."
@@ -304,7 +310,13 @@ class PackageManager(object):
 
         """
         for file in self.archive_files:
-            self._extract_package(file)
+            pkg_path = self._extract_package(file)
+            pkg = self._validate_package(pkg_path)
+            registered = self._register_package(pkg)
+            if registered == False:
+                logger.warn('Unable to register pkg from the following file, check logs for more info...{0}'.format(pkg_path))
+            else:
+                logger.info('Package from following file is installed...{0}'.format(pkg_path))
 
     def install_package(self, package_id):
         """TODO: Docstring for install_package.
@@ -324,26 +336,48 @@ class PackageManager(object):
         """
         logger.debug('Extracting pkg...{0}'.format(file))
         pkg_overwrite_mode = self._config.get(PACKAGE_MANAGER, PKG_OVERWRITE_MODE)
-        zip_pkg = zipfile.ZipFile(file)
-        parent_dir = os.path.dirname(file)
-        zip_pkg.extractall(parent_dir)
-        logger.debug('Pkg extracted to...{0}'.format(parent_dir))
+        pkg_file_name = os.path.basename(file)
+        pkg_dir_name = os.path.join(self.pkg_install_location, pkg_file_name.rstrip('.zip'))
+        if pkg_overwrite_mode == 'on':
+            logger.info('Overwrite mode is on, pkg content will be replaced with new files')
+            if os.path.exists(pkg_dir_name):
+                shutil.rmtree(pkg_dir_name)
 
-    def _validate_package(self, arg1):
+        zip_pkg = zipfile.ZipFile(file)
+        zip_pkg.extractall(self.pkg_install_location)
+        logger.debug('Pkg extracted to...{0}'.format(pkg_dir_name))
+        return pkg_dir_name
+
+    def _validate_package(self, pkg_path):
         """TODO: Docstring for validate_package.
 
-        :arg1: TODO
+        :pkg_path: TODO
         :returns: TODO
 
         """
-        pass
+        logger.debug('Validating package at location...{0}'.pkg_path)
+        #find .pkg files
+        pkg_file = glob.glob(os.path.join(pkg_path, '*.pkg'))
+        if len(pkg_file) == 1:
+            pkg = Package(pkg_path)
+            logger.debug('Package definition found at...{0}'.format(pkg_file[0]))
+            return pkg
+        elif len(pkg_file) > 1:
+            logger.warn('Multiple .pkg files found. A valid package should have only one .pkg file')
+            return None
+        else:
+            logger.warn('No .pkg file found. A package should have exactly one .pkg file')
 
-    def _register_package(self, package_location):
+        return None
+
+    def _register_package(self, pkg):
         """TODO: Docstring for install_package.
         :returns: TODO
 
         """
-        pass
+        DB = TinyDB(UI_BUILDER_DB_PATH)
+        PackageQuery = Query()
+        pkg_table = DB.table('Packages')
 
 
 class ArchiveManager(object):

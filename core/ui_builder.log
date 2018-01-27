@@ -7,3 +7,71 @@
 2018-01-26 22:15:55,735 - packages - DEBUG - Pkg installation location is ...tests/installed_pkgs
 2018-01-26 22:19:01,360 - packages - DEBUG - Trying to load conf for PkgManager from....
 2018-01-26 22:19:01,364 - packages - DEBUG - Pkg installation location is ...tests/installed_pkgs
+2018-01-27 10:03:07,791 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 10:03:07,796 - packages - DEBUG - Pkg installation location is ...tests/installed_pkgs
+2018-01-27 10:03:33,703 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 10:03:33,704 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 10:03:33,710 - packages - DEBUG - Not a file and is skipped...Button
+2018-01-27 10:03:33,712 - packages - DEBUG - Not a file and is skipped...TextBox
+2018-01-27 10:03:33,714 - packages - DEBUG - File is not zipped and is skipped...MyTestPackage.pkg
+2018-01-27 10:03:33,718 - packages - DEBUG - Extracting pkg.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 10:06:34,352 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 10:06:34,354 - packages - DEBUG - Pkg installation location is ...tests/installed_pkgs
+2018-01-27 10:06:39,913 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 10:06:39,917 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 10:06:39,921 - packages - DEBUG - Not a file and is skipped...Button
+2018-01-27 10:06:39,922 - packages - DEBUG - Not a file and is skipped...TextBox
+2018-01-27 10:06:39,925 - packages - DEBUG - File is not zipped and is skipped...MyTestPackage.pkg
+2018-01-27 10:06:39,927 - packages - DEBUG - Extracting pkg.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 10:06:39,943 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests
+2018-01-27 10:17:28,754 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 10:17:28,759 - packages - DEBUG - Pkg installation location is .../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 10:17:42,457 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 10:17:42,459 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 10:17:42,460 - packages - DEBUG - Not a file and is skipped...Button
+2018-01-27 10:17:42,461 - packages - DEBUG - Not a file and is skipped...TextBox
+2018-01-27 10:17:42,463 - packages - DEBUG - File is not zipped and is skipped...MyTestPackage.pkg
+2018-01-27 10:17:42,465 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 10:17:42,466 - packages - DEBUG - Extracting pkg.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 10:17:42,481 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 11:45:27,962 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 11:45:27,965 - packages - DEBUG - Pkg installation location is .../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 11:45:45,109 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 11:45:45,111 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 11:45:45,113 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 11:45:45,114 - packages - DEBUG - Extracting pkg.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 11:45:45,116 - packages - INFO - Overwrite mode is on, pkg content will be replaced with new files
+2018-01-27 11:45:45,132 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 11:47:32,012 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 11:47:32,014 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 11:47:32,016 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 11:47:32,017 - packages - DEBUG - Extracting pkg.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 11:47:32,018 - packages - INFO - Overwrite mode is on, pkg content will be replaced with new files
+2018-01-27 11:47:32,041 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 11:49:02,588 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 11:49:02,591 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 11:49:02,592 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 11:49:02,593 - packages - DEBUG - Extracting pkg.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 11:49:02,595 - packages - INFO - Overwrite mode is on, pkg content will be replaced with new files
+2018-01-27 11:49:02,620 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 11:49:21,219 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 11:49:21,224 - packages - DEBUG - Pkg installation location is .../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 11:49:25,167 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 11:49:25,169 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 11:49:25,171 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 11:49:25,173 - packages - DEBUG - Extracting pkg.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 11:49:25,185 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 11:53:44,928 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 11:53:44,936 - packages - DEBUG - Pkg installation location is .../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 11:53:50,360 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 11:53:50,361 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 11:53:50,363 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 11:53:50,364 - packages - DEBUG - Extracting pkg.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 11:53:50,379 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 11:54:27,305 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 11:54:27,309 - packages - DEBUG - Pkg installation location is .../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 11:54:31,523 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 11:54:31,524 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 11:54:31,526 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 11:54:31,527 - packages - DEBUG - Extracting pkg.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 11:54:31,536 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
