@@ -55,12 +55,15 @@ class Component(object):
         self.type = None
         self.author = None
         self.version = None
-        self._base_path = path
-        self.template_path = os.path.join(self._base_path, '{0}.html'.format(name))
-        self.config_path = os.path.join(self._base_path,'{0}.comp'.format(self.name))
+        self.is_enabled = True
+        self.is_installed = False
+        self.base_parent_id = None
+        self.base_path = path
+        self.template_path = os.path.join(path, '{0}.html'.format(name))
+        self.config_path = os.path.join(path,'{0}.comp'.format(name))
         self.security_id = None
 
-    def load_component(self):
+    def _load_component_config(self):
         """TODO: Docstring for load_component.
         :returns: TODO
 
@@ -97,6 +100,8 @@ class Package(object):
         self.url = None
         self.company = None
         self.version = None
+        self.is_enabled = True
+        self.is_installed = False
         self._comp_name_list = []
         self._comp_name_id_map = {}
         self._components = {}
@@ -123,8 +128,30 @@ class Package(object):
         return locals()
     location = property(**location())
 
-    def load_details(self):
-        """TODO: Docstring for load_details.
+    def is_enabled():
+        doc = "The is_enabled property."
+        def fget(self):
+            return self._is_enabled
+        def fset(self, value):
+            self._is_enabled = value
+        def fdel(self):
+            del self._is_enabled
+        return locals()
+    is_enabled = property(**is_enabled())
+
+    def is_installed():
+        doc = "The is_installed property."
+        def fget(self):
+            return self._is_installed
+        def fset(self, value):
+            self._is_installed = value
+        def fdel(self):
+            del self._is_installed
+        return locals()
+    is_installed = property(**is_installed())
+
+    def _load_pkg_config(self):
+        """TODO: Will be called by installer only
         :returns: TODO
 
         """
@@ -153,6 +180,17 @@ class Package(object):
             self.company = self.config_file.get('Details', 'Company')
             self._comp_name_list = self.config_file.get('Details', 'Components').split(',')
             logger.info('Package details loaded successfully...{0}'.format(self.name))
+            logger.debug('Registring child components now...')
+            self._load_child_comp_config()
+
+    def load_details(self, arg1):
+        """TODO: Docstring for load_details.
+
+        :arg1: TODO
+        :returns: TODO
+
+        """
+        pass
 
     def get_comp_name_list(self):
         """TODO: Docstring for get_comp_name_list.
@@ -165,19 +203,22 @@ class Package(object):
             self.load_details()
             return self._comp_name_list
 
-    def load_components(self):
+    def _load_child_comp_config(self):
         """TODO: Docstring for load_components.
         :returns: TODO
 
         """
         if self._comp_name_list is None:
-            self.load_details()
+            self._load_pkg_config()
 
         if self._comp_name_list is not None:
+            logger.debug('Components list for this pkg...{0}'.format(self._comp_name_list))
             for comp_name in self._comp_name_list:
+                logger.debug('Building component...{0} with config at...{1}'.format(comp_name.strip(), self.location))
                 comp_path = os.path.join(self.location, comp_name.strip())
-                comp = Component(comp_name, comp_path)
-                comp.load_component()
+                comp = Component(comp_name.strip(), comp_path)
+                comp.parent_id = self.id
+                comp._load_component_config()
                 self._components[comp_name] = comp
                 self._comp_name_id_map[comp.id] = comp
                 logger.debug('Component with Name:{0} and Id:{1} loaded successfully'.format(comp_name, comp.id))
@@ -378,15 +419,28 @@ class PackageManager(object):
 
         """
         logger.debug('Loading package details stored at...{0}'.format(pkg._location))
-        pkg.load_details()
+        pkg._load_pkg_config()
         logger.debug('Open connection to database: {0}'.format(UI_BUILDER_DB_PATH))
         #global UI_BUILDER_DB_PATH
         db = TinyDB(UI_BUILDER_DB_PATH)
         q = Query()
         pkg_table = db.table('Packages')
         logger.debug('Packages table has been opened')
-        pkg_entry = pkg_table.upsert({'location':pkg._location, 'details':pkg.__dict__}, q.id == pkg.id)
-        logger.debug('Package with name {0} and id {0} has been registered'.format(pkg.name, pkg.id))
+        pkg.is_enabled = True
+        pkg.is_installed = True
+        pkg_details = pkg.__dict__.copy()
+        #we will not save config and component objects
+        pkg_details['_config_file'] = None
+        pkg_details['_components'] = None
+        pkg_entry = pkg_table.upsert({'Location':pkg._location, 'Details':pkg_details}, q.id == pkg.id)
+        logger.debug('Package with name {0} and id {1} has been registered'.format(pkg.name, pkg.id))
+        logger.debug('Processing child components now...')
+        comp_table = db.table('Components')
+        for comp in pkg._components:
+            comp_details = comp.__dict__.copy()
+            comp_q = Query()
+            comp_entry = comp_table.upsert({'Location':comp_details.base_path, 'Details':comp_details}, comp_q.id == comp.id)
+        return True
 
 
 class ArchiveManager(object):
