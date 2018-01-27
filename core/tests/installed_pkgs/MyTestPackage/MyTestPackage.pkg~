@@ -4,6 +4,5 @@ Description=A test package file for ui builder
 Type=Controls
 Author=Ajeet Singh
 Version=1.0.0.0
-Url=http://adapt-tech.com
 Company=Armin Inc
 Components=Button, TextBox

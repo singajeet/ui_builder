@@ -75,3 +75,110 @@
 2018-01-27 11:54:31,526 - packages - DEBUG - Not a file and is skipped...installed_pkgs
 2018-01-27 11:54:31,527 - packages - DEBUG - Extracting pkg.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
 2018-01-27 11:54:31,536 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 18:54:14,716 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 18:54:14,719 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 18:54:14,720 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 18:54:38,384 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 18:54:38,391 - packages - DEBUG - Pkg installation location is .../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 18:56:28,088 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 18:56:28,095 - packages - DEBUG - Pkg installation location is .../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 18:56:46,043 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 18:56:46,046 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 18:56:46,048 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 18:56:46,049 - packages - DEBUG - Extracting pkg.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 18:56:46,056 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 18:58:13,707 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 18:58:13,709 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 18:58:13,710 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 18:58:13,710 - packages - DEBUG - Extracting pkg.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 18:58:13,717 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 18:58:52,609 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 18:58:52,618 - packages - DEBUG - Pkg installation location is .../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 18:58:56,793 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 18:58:56,796 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 18:58:56,799 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 18:58:56,799 - packages - DEBUG - Extracting pkg.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 18:58:56,806 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 18:58:56,806 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 18:58:56,809 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 19:11:45,581 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 19:11:45,588 - packages - DEBUG - Pkg installation location is .../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 19:11:51,483 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 19:11:51,486 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 19:11:51,487 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 19:11:51,489 - packages - DEBUG - Extracting pkg.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 19:11:51,500 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:11:51,500 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:11:51,503 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 19:11:51,503 - packages - DEBUG - Open connection to database: 
+2018-01-27 19:21:02,743 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 19:21:02,750 - packages - DEBUG - Pkg installation location is .../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 19:21:08,872 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 19:21:08,875 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 19:21:08,877 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 19:21:08,878 - packages - DEBUG - Extracting pkg.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 19:21:08,885 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:21:08,887 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:21:08,888 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 19:29:26,667 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 19:29:26,670 - packages - DEBUG - Pkg installation location is .../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 19:29:29,749 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 19:29:29,752 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 19:29:29,753 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 19:29:29,753 - packages - DEBUG - Extracting pkg.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 19:29:29,763 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:29:29,769 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:29:29,770 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 19:29:29,770 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-27 19:29:29,773 - packages - DEBUG - Packages table has been opened
+2018-01-27 19:29:29,776 - packages - DEBUG - Package with name None and id None has been registered
+2018-01-27 19:29:29,776 - packages - INFO - Package from following file is installed.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:34:14,721 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 19:34:14,726 - packages - DEBUG - Pkg installation location is .../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 19:34:18,812 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 19:34:18,815 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 19:34:18,816 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 19:34:18,816 - packages - DEBUG - Extracting pkg.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 19:34:18,826 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:34:18,826 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:34:18,834 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 19:34:18,834 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:34:18,834 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:35:45,996 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 19:35:46,000 - packages - DEBUG - Pkg installation location is .../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 19:35:48,943 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 19:35:48,946 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 19:35:48,947 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 19:35:48,947 - packages - DEBUG - Extracting pkg.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 19:35:48,956 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:35:48,957 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:35:48,966 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 19:35:48,967 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:35:48,967 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:36:30,209 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 19:36:30,211 - packages - DEBUG - Pkg installation location is .../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 19:36:33,299 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 19:36:33,302 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 19:36:33,302 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 19:36:33,303 - packages - DEBUG - Extracting pkg.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 19:36:33,316 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:36:33,318 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:36:33,325 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 19:36:33,325 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:36:33,325 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:36:33,326 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-27 19:39:59,694 - packages - DEBUG - Trying to load conf for PkgManager from....
+2018-01-27 19:39:59,697 - packages - DEBUG - Pkg installation location is .../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-27 19:40:01,713 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-27 19:40:01,716 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-27 19:40:01,717 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-27 19:40:01,717 - packages - DEBUG - Extracting pkg.../home/Admin/projects/python/frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-27 19:40:01,729 - packages - DEBUG - Pkg extracted to.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:40:01,730 - packages - DEBUG - Validating package at location.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:40:01,737 - packages - DEBUG - Package definition found at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-27 19:40:01,739 - packages - DEBUG - Loading package details stored at.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:40:01,739 - packages - DEBUG - Looking for pkg file in.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-27 19:40:01,740 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-27 19:40:01,740 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-27 19:40:01,742 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-27 19:40:01,743 - packages - DEBUG - Packages table has been opened

@@ -132,7 +132,7 @@ class Package(object):
         temp_pkg_files = os.listdir(self.location)
         conf_file = ''
         for f in temp_pkg_files:
-            if f.endswith('.pkg'):
+            if d.endswith('.pkg'):
                 conf_file = f
                 logger.debug('{0} pkg file found'.format(f))
                 break
