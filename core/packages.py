@@ -291,15 +291,6 @@ class PackageManager(object):
         """
         pass
 
-    def install_package(self, package_id):
-        """TODO: Docstring for install_package.
-
-        :package_id: TODO
-        :returns: TODO
-
-        """
-        pass
-
 
 class PackageInstaller(object):
 

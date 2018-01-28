@@ -1,4 +1,5 @@
 [Details]
+Id=eb82ebd4-9740-4cde-bdc1-1df0b9ef3ec5
 Name=MyTestPackage
 Description=A test package file for ui builder
 Type=Controls
