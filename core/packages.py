@@ -9,7 +9,7 @@ import logging
 import init_log
 import shutil
 import glob
-from tinydb import TinyDB, Query
+from tinydb import TinyDB, Query, where
 
 PACKAGE_INSTALLER='PackageInstaller'
 PKG_DROP_IN_LOC='package_drop_in_loc'
@@ -83,6 +83,26 @@ class Component(object):
         self.version = self.config_file.get('Details', 'Version')
         self.template_env = Environment(loader = ComponentLoader(self.template_path))
         logger.info('Component loaded successfully...{0}'.format(self.name))
+
+    def load_details(self, comp_id, db_conn):
+        """TODO: Docstring for load_details.
+        :returns: TODO
+
+        """
+        logger.debug('Loading details for component [{0}] from db'.format(comp_id))
+        if db_conn is not None:
+            comp_table = db_conn.table('Components')
+            Comp = Query()
+            comp_record = comp_table.get(Comp['Details']['id'] == comp_id)
+            if comp_record is not None:
+                self.__dict__ = comp_record['Details']
+            else:
+                logger.warn('Unable load details for comp [{0}] from db'.format(comp_id))
+            logger.debug('Details loaded succeasfully for component...{0}'.format(self.name))
+        else:
+            err = 'Database connection is invalid; Can''t load component details for...{0}'.format(comp_id)
+            logger.error(err)
+            raise Exception(err)
 
 
 class Package(object):
@@ -208,14 +228,29 @@ class Package(object):
             logger.error(err)
             raise Exception(err)
 
-    def load_details(self, arg1):
+    def load_details(self, pkg_id, db_conn):
         """TODO: Docstring for load_details.
 
         :arg1: TODO
         :returns: TODO
 
         """
-        pass
+        logger.debug('Loading details for package...[{0}] from db'.format(pkg_id))
+        if db_conn is not None:
+            pkg_table = db_conn.table('Package')
+            Pkg = Query()
+            pkg_record = pkg_table.get(Pkg['Details']['id'] == pkg_id)
+            if pkg_record is not None:
+                self.__dict__ = pkg_record['Details']
+                for comp_id, comp_name in self._comp_name_id_map:
+                    comp = Component(comp_name, '')
+                    comp.load_details(comp_id, db_conn)
+                    self._components[comp_name] = comp
+                    logger.debug('Component [{0}] with id [{1}] loaded and restored under pkg [{3}]'.format(comp_name, comp_id, self.name))
+            logger.debug('Successfully loaded details for pkg [{0}]'.format(self.name))
+        else:
+            logger.error('Database connection is invalid; Can''t load pkg [{0}] details'.format(pkg_id))
+            raise Exception('Database connection is invalid while loading pkg details...[{0}]'.format(pkg_id))
 
     def get_comp_name_list(self):
         """TODO: Docstring for get_comp_name_list.
@@ -261,6 +296,14 @@ class Package(object):
             return None
 
 class PackageManager(object):
+    def __init__(self, conf_path):
+        """TODO: Docstring for __init__.
+
+        :conf_path: TODO
+        :returns: TODO
+
+        """
+        pass
     def load_packages(self):
         """TODO: Docstring for load_packages.
         :returns: TODO
