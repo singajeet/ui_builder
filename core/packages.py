@@ -16,6 +16,9 @@ PKG_DROP_IN_LOC='package_drop_in_loc'
 PKG_INSTALL_LOC='package_install_loc'
 PKG_OVERWRITE_MODE='pkg_overwrite_mode'
 UI_BUILDER_DB = 'ui_builder_db'
+
+PACKAGE_MANAGER = 'PackageManager'
+COMMAND_BINDINGS = 'key_to_command_bindings'
 #global UI_BUILDER_DB_PATH
 
 init_log.config_logs()
@@ -303,12 +306,61 @@ class PackageManager(object):
         :returns: TODO
 
         """
-        pass
+        logger.info('Starting PackageManager...')
+        self.key_binding_config = ConfigParser.ConfigParser()
+        self.key_binding_config.read(os.path.join(conf_path, '{0}.cfg'.format(COMMAND_BINDINGS)))
+        self._load_key_command_bindings()
+        logger.debug('Loading PackageManager Configuration...{0}'.format(conf_path))
+        self.id = None
+        self._config = ConfigParser.ConfigParser()
+        self._config.read(os.path.join(conf_path,'ui_builder.cfg'))
+        self.pkg_install_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_INSTALL_LOC))
+        global UI_BUILDER_DB_PATH
+        UI_BUILDER_DB_PATH = self._config.get(PACKAGE_INSTALLER, UI_BUILDER_DB)
+
+    def packages_name_id_map():
+        doc = "The packages_name_id_map property."
+        def fget(self):
+            return self._packages_name_id_map
+        def fset(self, value):
+            self._packages_name_id_map = value
+        def fdel(self):
+            del self._packages_name_id_map
+        return locals()
+    packages_name_id_map = property(**packages_name_id_map())
+
+    def packages_map():
+        doc = "The packages_map property."
+        def fget(self):
+            return self._packages_map
+        def fset(self, value):
+            self._packages_map = value
+        def fdel(self):
+            del self._packages_map
+        return locals()
+    packages_map = property(**packages_map())
+
+    def _load_key_command_bindings(self):
+        for key, value in self.key_binding_config.items(PACKAGE_MANAGER):
+            self._key_to_command_mapping[key] = value
+
     def load_packages(self):
         """TODO: Docstring for load_packages.
         :returns: TODO
 
         """
+        self.packages_map = {}
+        self.packages_name_id_map = {}
+        _db = TinyDB(UI_BUILDER_DB_PATH)
+        _package_table = _db.table('Package_Index')
+        _all_packages = _package_table.all()
+        for  pkg_record in _all_packages:
+            pkg = Package('')
+            pkg.load_details(pkg_record.id, _db)
+            self.packages_name_id_map[pkg_record.name] = pkg_record.id
+            self.packages_map[pkg_record.id] = pkg
+
+        logger.debug('Packages map has been initialized successfully!')
 
     def activate_packages(self):
         """TODO: Docstring for activate_packages.
@@ -485,6 +537,11 @@ class PackageInstaller(object):
         pkg_details['_components'] = None
         pkg_entry = pkg_table.upsert({'Location':pkg._location, 'Details':pkg_details}, q['Details']['id'] == pkg.id)
         logger.debug('Package with name [{0}] and id [{1}] has been registered'.format(pkg.name, pkg.id))
+
+        pkg_idx_table = db.table('Package_Index')
+        idx_q = Query()
+        pkg_idx = pkg_idx_table.upsert({'Id':pkg.id, 'Name':pkg.name}, idx_q['Id'] == pkg.id)
+        
         logger.debug('Processing child components now...')
         comp_table = db.table('Components')
         for name, comp in pkg._components.iteritems():
@@ -494,6 +551,10 @@ class PackageInstaller(object):
             comp_q = Query()
             comp_entry = comp_table.upsert({'Location':comp.base_path, 'Details':comp_details}, comp_q['Details']['id'] == comp.id)
             logger.debug('Component with name [{0}] and id [{1}] has been registered under package [{2}]'.format(comp.name, comp.id, pkg.name))
+
+            comp_idx_table = db.table('Components_Index')
+            comp_idx_q = Query()
+            comp_idx = comp_idx_table.upsert({'Id':comp.id, 'Name':comp.name, 'Package_Id':pkg.id, 'Package_Name':pkg.name}, comp_idx_q['Id'] == comp.id)
         return True
 
 
