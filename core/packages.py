@@ -1,3 +1,4 @@
+# coding=utf-8
 import utils
 import ConfigParser
 import uuid
@@ -291,6 +292,22 @@ class PackageManager(object):
         """
         pass
 
+class PackageDownloader(object):
+
+    """Docstring for PackageDownloader. """
+
+    def __init__(self):
+        """TODO: to be defined1. """
+        pass
+
+
+class PackageCommand(object):
+
+    """Docstring for PackageCommand. """
+
+    def __init__(self):
+        """TODO: to be defined1. """
+        pass
 
 class PackageInstaller(object):
 
@@ -423,7 +440,7 @@ class PackageInstaller(object):
         #we will not save config and component objects
         pkg_details['_config_file'] = None
         pkg_details['_components'] = None
-        pkg_entry = pkg_table.upsert({'Location':pkg._location, 'Details':pkg_details}, q.id == pkg.id)
+        pkg_entry = pkg_table.upsert({'Location':pkg._location, 'Details':pkg_details}, q['Details']['id'] == pkg.id)
         logger.debug('Package with name [{0}] and id [{1}] has been registered'.format(pkg.name, pkg.id))
         logger.debug('Processing child components now...')
         comp_table = db.table('Components')
@@ -432,7 +449,7 @@ class PackageInstaller(object):
             comp_details['config_file'] = None
             comp_details['template_env'] = None
             comp_q = Query()
-            comp_entry = comp_table.upsert({'Location':comp.base_path, 'Details':comp_details}, comp_q.id == comp.id)
+            comp_entry = comp_table.upsert({'Location':comp.base_path, 'Details':comp_details}, comp_q['Details']['id'] == comp.id)
             logger.debug('Component with name [{0}] and id [{1}] has been registered under package [{2}]'.format(comp.name, comp.id, pkg.name))
         return True
 

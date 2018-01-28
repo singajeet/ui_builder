@@ -393,3 +393,187 @@
 2018-01-28 11:48:52,392 - packages - DEBUG - Component with name [TextBox] and id [cbd69783-468f-47a4-960c-fb1ead2c048a] has been registered under package [MyTestPackage]
 2018-01-28 11:48:52,394 - packages - DEBUG - Component with name [Button] and id [642291ac-d17c-4502-9c11-db1c03ad0b30] has been registered under package [MyTestPackage]
 2018-01-28 11:48:52,395 - packages - INFO - Package from following file is installed.../home/Admin/projects/python/frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:52:18,805 - packages - DEBUG - Loading PackageInstaller Configuration....
+2018-01-28 12:52:18,809 - packages - DEBUG - Packages will be installed in following location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-28 12:52:28,275 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 12:52:28,277 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 12:52:28,279 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 12:52:28,280 - packages - DEBUG - Extracting package content.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 12:52:28,305 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:52:28,307 - packages - DEBUG - Validating package at location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:52:28,309 - packages - DEBUG - Package definition found at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 12:52:28,310 - packages - DEBUG - Loading package details stored at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:52:28,310 - packages - DEBUG - Looking for pkg file in.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:52:28,311 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 12:52:28,314 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 12:52:28,315 - packages - DEBUG - Registring child components now...
+2018-01-28 12:52:28,317 - packages - INFO - Component loaded successfully...Button
+2018-01-28 12:52:28,319 - packages - DEBUG - Component with Name:Button and Id:642291ac-d17c-4502-9c11-db1c03ad0b30 loaded successfully
+2018-01-28 12:52:28,322 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 12:52:28,323 - packages - DEBUG - Component with Name: TextBox and Id:cbd69783-468f-47a4-960c-fb1ead2c048a loaded successfully
+2018-01-28 12:52:28,324 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 12:52:28,331 - packages - DEBUG - Package with name [MyTestPackage] and id [eb82ebd4-9740-4cde-bdc1-1df0b9ef3ec5] has been registered
+2018-01-28 12:52:28,332 - packages - DEBUG - Processing child components now...
+2018-01-28 12:52:28,339 - packages - DEBUG - Component with name [TextBox] and id [cbd69783-468f-47a4-960c-fb1ead2c048a] has been registered under package [MyTestPackage]
+2018-01-28 12:52:28,344 - packages - DEBUG - Component with name [Button] and id [642291ac-d17c-4502-9c11-db1c03ad0b30] has been registered under package [MyTestPackage]
+2018-01-28 12:52:28,345 - packages - INFO - Package from following file is installed.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:53:41,597 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 12:53:41,601 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 12:53:41,603 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 12:53:41,604 - packages - DEBUG - Extracting package content.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 12:53:41,628 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:53:41,630 - packages - DEBUG - Validating package at location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:53:41,633 - packages - DEBUG - Package definition found at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 12:53:41,634 - packages - DEBUG - Loading package details stored at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:53:41,635 - packages - DEBUG - Looking for pkg file in.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:53:41,636 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 12:53:41,639 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 12:53:41,640 - packages - DEBUG - Registring child components now...
+2018-01-28 12:53:41,642 - packages - INFO - Component loaded successfully...Button
+2018-01-28 12:53:41,643 - packages - DEBUG - Component with Name:Button and Id:642291ac-d17c-4502-9c11-db1c03ad0b30 loaded successfully
+2018-01-28 12:53:41,645 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 12:53:41,646 - packages - DEBUG - Component with Name: TextBox and Id:cbd69783-468f-47a4-960c-fb1ead2c048a loaded successfully
+2018-01-28 12:53:41,647 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 12:53:41,650 - packages - DEBUG - Package with name [MyTestPackage] and id [eb82ebd4-9740-4cde-bdc1-1df0b9ef3ec5] has been registered
+2018-01-28 12:53:41,653 - packages - DEBUG - Processing child components now...
+2018-01-28 12:53:41,657 - packages - DEBUG - Component with name [TextBox] and id [cbd69783-468f-47a4-960c-fb1ead2c048a] has been registered under package [MyTestPackage]
+2018-01-28 12:53:41,659 - packages - DEBUG - Component with name [Button] and id [642291ac-d17c-4502-9c11-db1c03ad0b30] has been registered under package [MyTestPackage]
+2018-01-28 12:53:41,661 - packages - INFO - Package from following file is installed.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:55:46,993 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 12:55:46,995 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 12:55:46,998 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 12:55:47,004 - packages - DEBUG - Extracting package content.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 12:55:47,028 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:55:47,030 - packages - DEBUG - Validating package at location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:55:47,033 - packages - DEBUG - Package definition found at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 12:55:47,035 - packages - DEBUG - Loading package details stored at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:55:47,036 - packages - DEBUG - Looking for pkg file in.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 12:55:47,038 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 12:55:47,042 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 12:55:47,043 - packages - DEBUG - Registring child components now...
+2018-01-28 12:55:47,046 - packages - INFO - Component loaded successfully...Button
+2018-01-28 12:55:47,047 - packages - DEBUG - Component with Name:Button and Id:642291ac-d17c-4502-9c11-db1c03ad0b30 loaded successfully
+2018-01-28 12:55:47,050 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 12:55:47,051 - packages - DEBUG - Component with Name: TextBox and Id:cbd69783-468f-47a4-960c-fb1ead2c048a loaded successfully
+2018-01-28 12:55:47,052 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 12:55:47,058 - packages - DEBUG - Package with name [MyTestPackage] and id [eb82ebd4-9740-4cde-bdc1-1df0b9ef3ec5] has been registered
+2018-01-28 12:55:47,059 - packages - DEBUG - Processing child components now...
+2018-01-28 12:55:47,063 - packages - DEBUG - Component with name [TextBox] and id [cbd69783-468f-47a4-960c-fb1ead2c048a] has been registered under package [MyTestPackage]
+2018-01-28 12:55:47,069 - packages - DEBUG - Component with name [Button] and id [642291ac-d17c-4502-9c11-db1c03ad0b30] has been registered under package [MyTestPackage]
+2018-01-28 12:55:47,070 - packages - INFO - Package from following file is installed.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 13:51:59,459 - packages - DEBUG - Loading PackageInstaller Configuration....
+2018-01-28 13:51:59,466 - packages - DEBUG - Packages will be installed in following location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-28 13:52:16,331 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 13:52:16,333 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 13:52:16,335 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 13:52:16,336 - packages - DEBUG - Extracting package content.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 13:52:16,360 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 13:52:16,361 - packages - DEBUG - Validating package at location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 13:52:16,363 - packages - DEBUG - Package definition found at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 13:52:16,365 - packages - DEBUG - Loading package details stored at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 13:52:16,366 - packages - DEBUG - Looking for pkg file in.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 13:52:16,367 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 13:52:16,369 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 13:52:16,371 - packages - DEBUG - Registring child components now...
+2018-01-28 13:52:16,374 - packages - INFO - Component loaded successfully...Button
+2018-01-28 13:52:16,375 - packages - DEBUG - Component with Name:Button and Id:642291ac-d17c-4502-9c11-db1c03ad0b30 loaded successfully
+2018-01-28 13:52:16,378 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 13:52:16,379 - packages - DEBUG - Component with Name: TextBox and Id:cbd69783-468f-47a4-960c-fb1ead2c048a loaded successfully
+2018-01-28 13:52:16,380 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 13:52:16,384 - packages - DEBUG - Package with name [MyTestPackage] and id [eb82ebd4-9740-4cde-bdc1-1df0b9ef3ec5] has been registered
+2018-01-28 13:52:16,385 - packages - DEBUG - Processing child components now...
+2018-01-28 13:52:16,388 - packages - DEBUG - Component with name [TextBox] and id [cbd69783-468f-47a4-960c-fb1ead2c048a] has been registered under package [MyTestPackage]
+2018-01-28 13:52:16,390 - packages - DEBUG - Component with name [Button] and id [642291ac-d17c-4502-9c11-db1c03ad0b30] has been registered under package [MyTestPackage]
+2018-01-28 13:52:16,391 - packages - INFO - Package from following file is installed.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 13:58:19,099 - packages - DEBUG - Loading PackageInstaller Configuration....
+2018-01-28 13:58:19,103 - packages - DEBUG - Packages will be installed in following location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-28 13:58:34,166 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 13:58:34,168 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 13:58:34,169 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 13:58:34,170 - packages - DEBUG - Extracting package content.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 13:58:34,193 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 13:58:34,195 - packages - DEBUG - Validating package at location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 13:58:34,198 - packages - DEBUG - Package definition found at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 13:58:34,199 - packages - DEBUG - Loading package details stored at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 13:58:34,200 - packages - DEBUG - Looking for pkg file in.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 13:58:34,201 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 13:58:34,204 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 13:58:34,204 - packages - DEBUG - Registring child components now...
+2018-01-28 13:58:34,206 - packages - INFO - Component loaded successfully...Button
+2018-01-28 13:58:34,207 - packages - DEBUG - Component with Name:Button and Id:642291ac-d17c-4502-9c11-db1c03ad0b30 loaded successfully
+2018-01-28 13:58:34,209 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 13:58:34,210 - packages - DEBUG - Component with Name: TextBox and Id:cbd69783-468f-47a4-960c-fb1ead2c048a loaded successfully
+2018-01-28 13:58:34,211 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 13:58:34,213 - packages - DEBUG - Package with name [MyTestPackage] and id [eb82ebd4-9740-4cde-bdc1-1df0b9ef3ec5] has been registered
+2018-01-28 13:58:34,213 - packages - DEBUG - Processing child components now...
+2018-01-28 13:58:34,215 - packages - DEBUG - Component with name [TextBox] and id [cbd69783-468f-47a4-960c-fb1ead2c048a] has been registered under package [MyTestPackage]
+2018-01-28 13:58:34,216 - packages - DEBUG - Component with name [Button] and id [642291ac-d17c-4502-9c11-db1c03ad0b30] has been registered under package [MyTestPackage]
+2018-01-28 13:58:34,217 - packages - INFO - Package from following file is installed.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:37:02,518 - packages - DEBUG - Loading PackageInstaller Configuration....
+2018-01-28 14:37:02,524 - packages - DEBUG - Packages will be installed in following location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs
+2018-01-28 14:37:10,101 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 14:37:10,102 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 14:37:10,104 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 14:37:10,107 - packages - DEBUG - Extracting package content.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 14:37:10,138 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:37:10,140 - packages - DEBUG - Validating package at location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:37:10,143 - packages - DEBUG - Package definition found at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 14:37:10,145 - packages - DEBUG - Loading package details stored at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:37:10,147 - packages - DEBUG - Looking for pkg file in.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:37:10,150 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 14:37:10,156 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 14:37:10,157 - packages - DEBUG - Registring child components now...
+2018-01-28 14:37:10,160 - packages - INFO - Component loaded successfully...Button
+2018-01-28 14:37:10,161 - packages - DEBUG - Component with Name:Button and Id:642291ac-d17c-4502-9c11-db1c03ad0b30 loaded successfully
+2018-01-28 14:37:10,164 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 14:37:10,166 - packages - DEBUG - Component with Name: TextBox and Id:cbd69783-468f-47a4-960c-fb1ead2c048a loaded successfully
+2018-01-28 14:37:10,169 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 14:37:10,173 - packages - DEBUG - Package with name [MyTestPackage] and id [eb82ebd4-9740-4cde-bdc1-1df0b9ef3ec5] has been registered
+2018-01-28 14:37:10,175 - packages - DEBUG - Processing child components now...
+2018-01-28 14:37:10,177 - packages - DEBUG - Component with name [TextBox] and id [cbd69783-468f-47a4-960c-fb1ead2c048a] has been registered under package [MyTestPackage]
+2018-01-28 14:37:10,182 - packages - DEBUG - Component with name [Button] and id [642291ac-d17c-4502-9c11-db1c03ad0b30] has been registered under package [MyTestPackage]
+2018-01-28 14:37:10,183 - packages - INFO - Package from following file is installed.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:37:33,591 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 14:37:33,593 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 14:37:33,596 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 14:37:33,598 - packages - DEBUG - Extracting package content.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 14:37:33,624 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:37:33,626 - packages - DEBUG - Validating package at location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:37:33,628 - packages - DEBUG - Package definition found at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 14:37:33,630 - packages - DEBUG - Loading package details stored at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:37:33,631 - packages - DEBUG - Looking for pkg file in.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:37:33,633 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 14:37:33,637 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 14:37:33,639 - packages - DEBUG - Registring child components now...
+2018-01-28 14:37:33,642 - packages - INFO - Component loaded successfully...Button
+2018-01-28 14:37:33,643 - packages - DEBUG - Component with Name:Button and Id:642291ac-d17c-4502-9c11-db1c03ad0b30 loaded successfully
+2018-01-28 14:37:33,647 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 14:37:33,648 - packages - DEBUG - Component with Name: TextBox and Id:cbd69783-468f-47a4-960c-fb1ead2c048a loaded successfully
+2018-01-28 14:37:33,649 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 14:37:33,652 - packages - DEBUG - Package with name [MyTestPackage] and id [eb82ebd4-9740-4cde-bdc1-1df0b9ef3ec5] has been registered
+2018-01-28 14:37:33,653 - packages - DEBUG - Processing child components now...
+2018-01-28 14:37:33,657 - packages - DEBUG - Component with name [TextBox] and id [cbd69783-468f-47a4-960c-fb1ead2c048a] has been registered under package [MyTestPackage]
+2018-01-28 14:37:33,660 - packages - DEBUG - Component with name [Button] and id [642291ac-d17c-4502-9c11-db1c03ad0b30] has been registered under package [MyTestPackage]
+2018-01-28 14:37:33,663 - packages - INFO - Package from following file is installed.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:39:51,591 - packages - WARNING - Invalid file and is skipped...__init__.py
+2018-01-28 14:39:51,595 - packages - WARNING - Invalid file and is skipped...test_case1.py
+2018-01-28 14:39:51,617 - packages - DEBUG - Not a file and is skipped...installed_pkgs
+2018-01-28 14:39:51,619 - packages - DEBUG - Extracting package content.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/MyTestPackage.zip
+2018-01-28 14:39:51,640 - packages - DEBUG - Pkg extracted to.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:39:51,643 - packages - DEBUG - Validating package at location.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:39:51,645 - packages - DEBUG - Package definition found at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage/MyTestPackage.pkg
+2018-01-28 14:39:51,647 - packages - DEBUG - Loading package details stored at.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:39:51,649 - packages - DEBUG - Looking for pkg file in.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
+2018-01-28 14:39:51,650 - packages - DEBUG - MyTestPackage.pkg pkg file found
+2018-01-28 14:39:51,655 - packages - INFO - Package details loaded successfully...MyTestPackage
+2018-01-28 14:39:51,656 - packages - DEBUG - Registring child components now...
+2018-01-28 14:39:51,659 - packages - INFO - Component loaded successfully...Button
+2018-01-28 14:39:51,660 - packages - DEBUG - Component with Name:Button and Id:642291ac-d17c-4502-9c11-db1c03ad0b30 loaded successfully
+2018-01-28 14:39:51,663 - packages - INFO - Component loaded successfully...TextBox
+2018-01-28 14:39:51,664 - packages - DEBUG - Component with Name: TextBox and Id:cbd69783-468f-47a4-960c-fb1ead2c048a loaded successfully
+2018-01-28 14:39:51,666 - packages - DEBUG - Open connection to database: ui_builder.json.db
+2018-01-28 14:39:51,669 - packages - DEBUG - Package with name [MyTestPackage] and id [eb82ebd4-9740-4cde-bdc1-1df0b9ef3ec5] has been registered
+2018-01-28 14:39:51,670 - packages - DEBUG - Processing child components now...
+2018-01-28 14:39:51,673 - packages - DEBUG - Component with name [TextBox] and id [cbd69783-468f-47a4-960c-fb1ead2c048a] has been registered under package [MyTestPackage]
+2018-01-28 14:39:51,676 - packages - DEBUG - Component with name [Button] and id [642291ac-d17c-4502-9c11-db1c03ad0b30] has been registered under package [MyTestPackage]
+2018-01-28 14:39:51,678 - packages - INFO - Package from following file is installed.../data/data/com.termux/files/home/projects/python/Frameworks/ui_builder/core/tests/installed_pkgs/MyTestPackage
