@@ -4,12 +4,13 @@ import ConfigParser
 import uuid
 import os
 import zipfile
-from jinja2 import BaseLoader,TemplateNotFound,Template,Environment
 import logging
 import init_log
 import shutil
 import glob
 from tinydb import TinyDB, Query, where
+import commands
+
 
 PACKAGE_INSTALLER='PackageInstaller'
 PKG_DROP_IN_LOC='package_drop_in_loc'
@@ -24,30 +25,7 @@ COMMAND_BINDINGS = 'key_to_command_bindings'
 init_log.config_logs()
 logger = logging.getLogger(__name__)
 
-class ComponentLoader(BaseLoader):
-
-    """Docstring for ComponentLoader. """
-
-    def __init__(self, path):
-        """TODO: to be defined1. """
-        BaseLoader.__init__(self)
-        self.path = path
-
-    def get_source(self, environment, template):
-        """TODO: Docstring for get_source.
-
-        :environment: TODO
-        :returns: TODO
-
-        """
-        path = os.path.join('./', template)
-        if os.path.exists(path):
-            mtime = os.path.getmtime(path)
-            with file(path) as f:
-                source = f.read().decode('utf-8')
-                return source, path, lambda: mtime == os.path.getmtime(path)
-
-class Component(object):
+class ComponentInfo(object):
 
     """Docstring for Component. """
 
@@ -84,7 +62,6 @@ class Component(object):
         self.type = self.config_file.get('Details', 'Type')
         self.author = self.config_file.get('Details', 'Author')
         self.version = self.config_file.get('Details', 'Version')
-        self.template_env = Environment(loader = ComponentLoader(self.template_path))
         logger.info('Component loaded successfully...{0}'.format(self.name))
 
     def load_details(self, comp_id, db_conn):
@@ -108,7 +85,7 @@ class Component(object):
             raise Exception(err)
 
 
-class Package(object):
+class PackageInfo(object):
 
     """Docstring for Package. """
 
@@ -220,7 +197,7 @@ class Package(object):
         if self._comp_name_list is not None:
             for comp_name in self._comp_name_list:
                 comp_path = os.path.join(self.location, comp_name.strip())
-                comp = Component(comp_name.strip(), comp_path)
+                comp = ComponentInfo(comp_name.strip(), comp_path)
                 comp.parent_id = self.id
                 comp._load_component_config()
                 self._components[comp_name] = comp
@@ -246,7 +223,7 @@ class Package(object):
             if pkg_record is not None:
                 self.__dict__ = pkg_record['Details']
                 for comp_id, comp_name in self._comp_name_id_map:
-                    comp = Component(comp_name, '')
+                    comp = ComponentInfo(comp_name, '')
                     comp.load_details(comp_id, db_conn)
                     self._components[comp_name] = comp
                     logger.debug('Component [{0}] with id [{1}] loaded and restored under pkg [{3}]'.format(comp_name, comp_id, self.name))
@@ -298,6 +275,30 @@ class Package(object):
         else:
             return None
 
+class PackageCommand(object):
+
+    """Docstring for PackageCommand. """
+    INSTALL = 'install'
+    UNINSTALL = 'uninstall'
+    ACTIVATE = 'activate'
+    DEACTIVATE = 'deactivate'
+    LIST = 'list'
+    SHOW = 'show'
+
+    def __init__(self, pkg_manager):
+        """TODO: to be defined1. """
+        self.package_manager = pkg_manager
+
+    def register_commands(self, name, action):
+        """TODO: Docstring for register_commands.
+        :returns: TODO
+
+        """
+        cmd = commands.Command(name)
+        act = commands.Action(action)
+        cmd._actions.append(act)
+        commands.CommandManager.register_command('Packages', name, cmd)
+
 class PackageManager(object):
     def __init__(self, conf_path):
         """TODO: Docstring for __init__.
@@ -317,6 +318,10 @@ class PackageManager(object):
         self.pkg_install_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_INSTALL_LOC))
         global UI_BUILDER_DB_PATH
         UI_BUILDER_DB_PATH = self._config.get(PACKAGE_INSTALLER, UI_BUILDER_DB)
+        ###Setup commands
+        self.installer = PackageInstaller(conf_path)
+        self.commands = PackageCommands(self)
+        self.commands.register_commands()
 
     def packages_name_id_map():
         doc = "The packages_name_id_map property."
@@ -355,7 +360,7 @@ class PackageManager(object):
         _package_table = _db.table('Package_Index')
         _all_packages = _package_table.all()
         for  pkg_record in _all_packages:
-            pkg = Package('')
+            pkg = PackageInfo('')
             pkg.load_details(pkg_record.id, _db)
             self.packages_name_id_map[pkg_record.name] = pkg_record.id
             self.packages_map[pkg_record.id] = pkg
@@ -369,36 +374,30 @@ class PackageManager(object):
         :returns: TODO
 
         """
-        pass
+        for pkg_id, pkg in self.packages_map:
+            pkg.is_enabled = True
 
-    def activate_package(self, package_id):
+    def activate_package(self, package_name):
         """TODO: Docstring for activate_package.
         :returns: TODO
 
         """
-        pass
+        pkg = self.packages_map[self.packages_name_id_map[package_name]]
+        pkg.is_enabled = True
 
-    def deactivate_package(self, package_id):
+    def deactivate_package(self, package_name):
         """TODO: Docstring for deactivate_package.
 
         :package_id: TODO
         :returns: TODO
 
         """
-        pass
+        pkg = self.packages_map[self.packages_name_id_map[package_name]]
+        pkg.is_enabled = False
 
 class PackageDownloader(object):
 
     """Docstring for PackageDownloader. """
-
-    def __init__(self):
-        """TODO: to be defined1. """
-        pass
-
-
-class PackageCommand(object):
-
-    """Docstring for PackageCommand. """
 
     def __init__(self):
         """TODO: to be defined1. """
@@ -506,7 +505,7 @@ class PackageInstaller(object):
         #find .pkg files
         pkg_file = glob.glob(os.path.join(pkg_path, '*.pkg'))
         if len(pkg_file) == 1:
-            pkg = Package(pkg_path)
+            pkg = PackageInfo(pkg_path)
             logger.debug('Package definition found at...{0}'.format(pkg_file[0]))
             return pkg
         elif len(pkg_file) > 1:

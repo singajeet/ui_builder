@@ -7,14 +7,12 @@ class Action(object):
 
     """Docstring for Action. """
 
-    def __init__(self, func, name=None, owner=None, *args, **kwargs) :
+    def __init__(self, func, name=None, owner=None):
         """TODO: to be defined1. """
         self.id = None
         self.name = None
         self.owner = None
         self._callback = func
-        self.args = args
-        self.kwargs = kwargs
 
     def callback():
         doc = "The callback property."
@@ -30,28 +28,25 @@ class Action(object):
         return locals()
     callback = property(**callback())
 
-    def execute(self, args=None):
+    def execute(self, *args, **kwargs):
         """TODO: Docstring for execute.
         :returns: TODO
 
         """
-        if args is not None:
-            self.args = args
-
         if self.callback is None or not callable(self.callback):
             raise ReferenceError('The function reference is not callable')
         else:
-            self.callback(self, args, kwargs)
+            self.callback(args, kwargs)
 
 class Event(object):
 
     """Docstring for Event. """
 
-    def __init__(self, name=None, event_args=None):
+    def __init__(self, name=None):
         """TODO: to be defined1. """
         self.id = None
         self.name = name
-        self.event_args = event_args
+        self.event_args = None
         self.subscribers = []
 
     def add_subscriber(self, subscriber):
@@ -72,22 +67,19 @@ class Event(object):
         if subscriber is not None and self.subscribers.__contains__(subscriber):
             self.subscribers.remove(subscriber)
 
-    def fire(self, event_args=None):
+    def fire(self, source, *args, **kwargs):
         """TODO: Docstring for fire.
 
         :arg1: TODO
         :returns: TODO
 
         """
-        if event_args is not None:
-            self.event_args = event_args
-
         for subscriber in self.subscribers:
             if isinstance(subscriber, Action):
-                subscriber.execute(self.event_args)
+                subscriber.execute(source, args, kwargs)
             else:
                 if callable(subscriber):
-                    subscriber(self.event_args)
+                    subscriber(source, args, kwargs
                 else:
                     raise ReferenceError('Not a callable object...{0}'.format(subscriber))
 
@@ -103,11 +95,11 @@ class Command(object):
 
     """Docstring for Command. """
 
-    def __init__(self, name=None, args=None, action=None):
+    def __init__(self, name=None):
         """TODO: to be defined1. """
         self.id = None
         self.name = name #Command name
-        self._action = action #Action to be executed
+        self._actions = [] #Actions to be executed
         self._post_callback = None #Will be called after cmd execution
         self._pre_callback = None
         self.args = args #imstance of CommandArgs
@@ -123,19 +115,16 @@ class Command(object):
             return locals()
         name = property(**name())
 
-        def action():
+        def actions():
             doc = "The action property."
             def fget(self):
-                return self._action
+                return self._actions
             def fset(self, value):
-                if callable(value):
-                    self._action = value
-                else:
-                    raise ValueError('Only callable types are allowed')
+                self._actions = value
             def fdel(self):
-                del self._action
+                del self._actions
             return locals()
-        action = property(**action())
+        actions = property(**actions())
 
         def post_callback():
             doc = "The post_callback property."
@@ -165,36 +154,41 @@ class Command(object):
             return locals()
         pre_callback = property(**pre_callback())
 
-        def args():
-            doc = "The args property."
-            def fget(self):
-                return self._args
-            def fset(self, value):
-                self._args = value
-            def fdel(self):
-                del self._args
-            return locals()
-        args = property(**args())
+        def add_action(self, action_obj):
+            """TODO: Docstring for add_action.
+            :returns: TODO
 
-        def do(self, args):
+            """
+            if action_obj is not None and (isinstance(action_obj, Action) or callable(action_obj)):
+                self.actions.append(action_obj)
+            else:
+                raise ValueError('Provided argument is not an callable or Action type')
+
+        def remove_action(self, action_obj):
+            """TODO: Docstring for remove_action.
+            :returns: TODO
+
+            """
+            if action_obj is not None and self.actions.__contains__(action_obj):
+                self.actions.remove(action_obj)
+
+        def do(self, *args, **kwargs):
             """TODO: Docstring for do.
 
             :arg: TODO
             :returns: TODO
 
             """
-            if args is not None:
-                self.args = args
-
             if self.pre_callback is not None:
                 self.pre_callback()
-            if self.action is not None and isinstance(self.callback, Action):
-                self.callback.execute(self.args)
-            elif callable(self.callback):
-                self.callback(self.args)
-            else:
-                raise ReferenceError('The reference procided in callback is not callable')
-
+            if self.actions is not None:
+                for act in self.actions:
+                    if isinstance(act, Action):
+                        act.execute(args, kwargs)
+                    elif callable(act):
+                        act(args, kwargs)
+                    else:
+                        raise ReferenceError('The reference procided in Action is not callable')
             if self.post_callback is not None:
                 self.post_callback()
 
@@ -209,7 +203,7 @@ class CommandManager(object):
         self.id = None
         self._config_path = config_path
         self.name = name
-        self.commands = {}
+        self.namespace_commands = {}
         self._pre_callback = None
         self._post_callback = None
         self._config = ConfigParser()
@@ -240,61 +234,109 @@ class CommandManager(object):
         return locals()
     pre_callback = property(**pre_callback())
 
-    def register_command(self, name, command):
+    def post_callback():
+        doc = "The post_callback property."
+        def fget(self):
+            return self._post_callback
+        def fset(self, value):
+            self._post_callback = value
+        def fdel(self):
+            del self._post_callback
+        return locals()
+    post_callback = property(**post_callback())
+
+    def register_namespace(self, namespace):
+        """TODO: Docstring for register_namespace.
+
+        :namespace: TODO
+        :returns: TODO
+
+        """
+        if namespace is not None:
+            if self.namespace_commands.__contains__(namespace):
+                raise Exception('Command namespace is already registered...{0}'.format(namespace))
+            else:
+                self.namespace_commands[namespace]={}
+        else:
+            raise ValueError('Namespace argument value can''t be empty')
+
+    def unregister_namespace(self, namespace):
+        """TODO: Docstring for unregister_namespace.
+        :returns: TODO
+
+        """
+        if namespace is not None:
+            if self.namespace_commands.__contains__(namespace):
+                self.namespace_commands.pop(namespace)
+
+    def register_command(self, namespace, name, command):
         """TODO: Docstring for register_command.
 
         :name: TODO
         :returns: TODO
 
         """
-        if name is not None and command is not None:
+        if namespace is not None and name is not None and command is not None:
+            if self.namespace_commands.__contains__(namespace) == False:
+                raise Exception('Provided namespace is not registered yet...{0}'.format(namespace))
             if callable(command) or isinstance(command, Action):
                 overwrite_mode = self._config.get(CONFIG_SECTION, OVERWRITE_COMMAND_MODE)
-                if self.commands[name] is not None and overwrite_mode == 'on':
-                    self.commands[name] = command
-                elif self.commands[name] is not None and overwrite_mode != 'on':
+                commands = self.namespace_commands[namespace]
+                if commands[name] is not None and overwrite_mode == 'on':
+                    commands[name] = command
+                elif commands[name] is not None and overwrite_mode != 'on':
                     raise Exception('An command is already registered with same name')
                 else:
-                    self.commands[name] = command
+                    commands[name] = command
             else:
                 raise Exception('Invalid command provided, only callable type or Action types are allowed')
         else:
             raise ValueError('Both name and command parameters are required')
 
-    def unregister_command(self, name):
+    def unregister_command(self, namespace, name):
         """TODO: Docstring for unregister_command.
 
         :name: TODO
         :returns: TODO
 
         """
-        if name is not None and self.commands[name] is not None:
-            self.commands.pop(name)
+        if name is not None and nameapace is not None:
+            if self.namespace_commands.__contains__(namespace):
+                commands = self.namespace_commands[namespace]
+                if commands[name] is not None:
+                    commands.pop(name)
 
-    def call(self, name):
+    def call(self, namespace, name, *args, **kwargs):
         """TODO: Docstring for call.
 
         :nam: TODO
         :returns: TODO
 
         """
-        if name is not None and self.commands[name] is not None:
-            command = self.commands[name]
-            if isinstance(command, Command):
-                args = command.args
-                command.do(args)
-            elif callable(command):
-                command()
+        if name is not None and namespace is not None:
+            if self.namespace_commands.__contains__(namespace):
+                commands = self.namespace_commands[namespace]
+                if commands[name] is not None:
+                    command = self.commands[name]
+                    if isinstance(command, Command):
+                        command.do(args, kwargs)
+                    elif callable(command):
+                        command(args, kwargs)
+                    else:
+                        raise Exception('The command object for Command is not callable or is not of type Command...{0}'.format(name))
+                else:
+                    raise Exception('Command [{0}] not found in namespace... [{1}]'.format(name, namespace))
             else:
-                raise Exception('The command object for Command is not callable or is not of type Command...{0}'.format(name))
+                raise Exception('Namespace [{0}] is not registered yet'.format(namespace))
         else:
             raise ValueError('Either name parameter is empty or command is not yet registered')
 
-    def get_command(self, name):
+    def get_command(self, namespace, name):
         """TODO: Docstring for get_command.
 
         :name: TODO
         :returns: TODO
 
         """
-        return self.commands[name] if self.commands[name] is not None else None
+        commands = self.namespace_commands[namespace]
+        return commands[name] if commands[name] is not None else None
