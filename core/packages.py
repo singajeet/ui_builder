@@ -541,7 +541,7 @@ class PackageInstaller(object):
         pkg_idx_table = db.table('Package_Index')
         idx_q = Query()
         pkg_idx = pkg_idx_table.upsert({'Id':pkg.id, 'Name':pkg.name}, idx_q['Id'] == pkg.id)
-        
+
         logger.debug('Processing child components now...')
         comp_table = db.table('Components')
         for name, comp in pkg._components.iteritems():
