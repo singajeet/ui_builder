@@ -275,6 +275,7 @@ class PackageInfo(object):
         else:
             return None
 
+
 class PackageCommand(object):
 
     """Docstring for PackageCommand. """
@@ -288,8 +289,13 @@ class PackageCommand(object):
     def __init__(self, pkg_manager):
         """TODO: to be defined1. """
         self.package_manager = pkg_manager
+        self.pkg_mgr_commands_map = {}
 
-    def register_commands(self, name, action):
+    def register_pkg_mgr_commands(self):
+        self.register_command(INSTALL, self.package_manager.installer.install_packages)
+        self.register_command(UNINSTALL, self.package_manager.installer.uninstall_packages)
+
+    def register_command(self, name, action):
         """TODO: Docstring for register_commands.
         :returns: TODO
 
@@ -298,6 +304,8 @@ class PackageCommand(object):
         act = commands.Action(action)
         cmd._actions.append(act)
         commands.CommandManager.register_command('Packages', name, cmd)
+        self.pkg_mgr_commands_map[name] = cmd
+
 
 class PackageManager(object):
     def __init__(self, conf_path):
@@ -395,6 +403,7 @@ class PackageManager(object):
         pkg = self.packages_map[self.packages_name_id_map[package_name]]
         pkg.is_enabled = False
 
+
 class PackageDownloader(object):
 
     """Docstring for PackageDownloader. """
@@ -402,6 +411,7 @@ class PackageDownloader(object):
     def __init__(self):
         """TODO: to be defined1. """
         pass
+
 
 class PackageInstaller(object):
 
@@ -456,12 +466,19 @@ class PackageInstaller(object):
     def _get_archive_files_list(self):
         self.archive_files = self.archive_manager.load_archives()
 
-    def install_packages(self):
-        """TODO: Docstring for install_packages.
+    def uninstall_packages(self, *args, **kwargs):
+        """TODO: Docstring for uninstall_packages.
 
-        :arg1: TODO
+        :*arg: TODO
         :returns: TODO
 
+        """
+        pass
+
+    def install_packages(self, *args, **kwargs):
+        """TODO: Docstring for install_packages.
+        :arg1: TODO
+        :returns: TODO
         """
         self._get_archive_files_list()
         for file in self.archive_files:
@@ -475,10 +492,8 @@ class PackageInstaller(object):
 
     def _extract_package(self, file):
         """TODO: Docstring for extract_package.
-
         :file: TODO
         :returns: TODO
-
         """
         logger.debug('Extracting package content...{0}'.format(file))
         pkg_overwrite_mode = self._config.get(PACKAGE_INSTALLER, PKG_OVERWRITE_MODE)
@@ -493,28 +508,6 @@ class PackageInstaller(object):
         zip_pkg.extractall(self.pkg_install_location)
         logger.debug('Pkg extracted to...{0}'.format(pkg_dir_name))
         return pkg_dir_name
-
-    def _validate_package(self, pkg_path):
-        """TODO: Docstring for validate_package.
-
-        :pkg_path: TODO
-        :returns: TODO
-
-        """
-        logger.debug('Validating package at location...{0}'.format(pkg_path))
-        #find .pkg files
-        pkg_file = glob.glob(os.path.join(pkg_path, '*.pkg'))
-        if len(pkg_file) == 1:
-            pkg = PackageInfo(pkg_path)
-            logger.debug('Package definition found at...{0}'.format(pkg_file[0]))
-            return pkg
-        elif len(pkg_file) > 1:
-            logger.warn('Multiple .pkg files found. A valid package should have only one .pkg file')
-            return None
-        else:
-            logger.warn('No .pkg file found. A package should have exactly one .pkg file')
-
-        return None
 
     def _register_package(self, pkg):
         """TODO: Docstring for install_package.
