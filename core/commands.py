@@ -79,7 +79,7 @@ class Event(object):
                 subscriber.execute(source, args, kwargs)
             else:
                 if callable(subscriber):
-                    subscriber(source, args, kwargs
+                    subscriber(source, args, kwargs)
                 else:
                     raise ReferenceError('Not a callable object...{0}'.format(subscriber))
 
@@ -340,3 +340,20 @@ class CommandManager(object):
         """
         commands = self.namespace_commands[namespace]
         return commands[name] if commands[name] is not None else None
+
+class Commands(object):
+
+    """Docstring for Commands. """
+
+    SUCCESS = 0
+    FAILED = 1
+    SUCCESS_WARNING = 2
+    WARNING = 4
+    INVALID_COMMAND_OPTION = 8
+    INVALID_COMMAND = 16
+    INVALID_SUB_COMMAND_OPTION = 32
+    INVALID_SUB_COMMAND = 64
+
+    def __init__(self):
+        """TODO: to be defined1. """
+        pass

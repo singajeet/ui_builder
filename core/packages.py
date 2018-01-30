@@ -285,6 +285,7 @@ class PackageCommand(object):
     DEACTIVATE = 'deactivate'
     LIST = 'list'
     SHOW = 'show'
+    LOAD = 'load'
 
     def __init__(self, pkg_manager):
         """TODO: to be defined1. """
@@ -294,6 +295,7 @@ class PackageCommand(object):
     def register_pkg_mgr_commands(self):
         self.register_command(INSTALL, self.package_manager.installer.install_packages)
         self.register_command(UNINSTALL, self.package_manager.installer.uninstall_packages)
+        self.register_command(LOAD, self.package_manager.load_packages_command)
 
     def register_command(self, name, action):
         """TODO: Docstring for register_commands.
@@ -316,6 +318,8 @@ class PackageManager(object):
 
         """
         logger.info('Starting PackageManager...')
+        self.packages_map = {}
+        self.packages_name_id_map = {}
         self.key_binding_config = ConfigParser.ConfigParser()
         self.key_binding_config.read(os.path.join(conf_path, '{0}.cfg'.format(COMMAND_BINDINGS)))
         self._load_key_command_bindings()
@@ -357,13 +361,48 @@ class PackageManager(object):
         for key, value in self.key_binding_config.items(PACKAGE_MANAGER):
             self._key_to_command_mapping[key] = value
 
+    def load_packages_command(self, *args):
+        """TODO: Docstring for load_packages_command.
+        :returns: TODO
+
+        """
+        if len(args) >= 2:
+            cmd = args.pop(0)
+            if cmd.upper() == 'LOAD':
+                param = args.pop(0)
+                if param.upper() == '--ALL':
+                    self.load_packages()
+                elif param.upper() == 'PACKAGE':
+                    pkg_name = args.pop(0)
+                    if pkg_name is not None:
+                        self.load_package(pkg_name)
+                        return (commands.Commands.SUCCESS, 'Package loaded', None)
+                    else:
+                        return (commands.Commands.SUCCESS_WARNING, 'Package not found!', None)
+                else:
+                    return (commands.Commands.INVALID_SUB_COMMAND_OPTION, 'Invalid option provided - {0}'.format(param), 'Valid options are --all, package <package_name>')
+            else:
+                return (commands.Commands.INVALID_SUB_COMMAND, 'Invalid sub-command provided', None)
+
+    def load_package(self, pkg_name):
+        """TODO: Docstring for load_package.
+        :returns: TODO
+
+        """
+        _db = TinyDB(UI_BUILDER_DB_PATH)
+        _pkg_table = _db.table('Package_Index')
+        _pkg = _pkg_table.get(Query()['name'] == pkg_name)
+        if _pkg is not None:
+            pkg = PackageInfo('')
+            pkg.load_details(_pkg.id, _db)
+            self.packages_name_id_map[_pkg.name]=_pkg.id
+            self.packages_map[_pkg.id] = pkg
+
     def load_packages(self):
         """TODO: Docstring for load_packages.
         :returns: TODO
 
         """
-        self.packages_map = {}
-        self.packages_name_id_map = {}
         _db = TinyDB(UI_BUILDER_DB_PATH)
         _package_table = _db.table('Package_Index')
         _all_packages = _package_table.all()
@@ -372,7 +411,6 @@ class PackageManager(object):
             pkg.load_details(pkg_record.id, _db)
             self.packages_name_id_map[pkg_record.name] = pkg_record.id
             self.packages_map[pkg_record.id] = pkg
-
         logger.debug('Packages map has been initialized successfully!')
 
     def activate_packages(self):
