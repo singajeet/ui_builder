@@ -312,10 +312,8 @@ class PackageCommand(object):
 class PackageManager(object):
     def __init__(self, conf_path):
         """TODO: Docstring for __init__.
-
         :conf_path: TODO
         :returns: TODO
-
         """
         logger.info('Starting PackageManager...')
         self.packages_map = {}
@@ -364,18 +362,17 @@ class PackageManager(object):
     def load_packages_command(self, *args):
         """TODO: Docstring for load_packages_command.
         :returns: TODO
-
         """
         if len(args) >= 2:
             cmd = args.pop(0)
             if cmd.upper() == 'LOAD':
                 param = args.pop(0)
                 if param.upper() == '--ALL':
-                    self.load_packages()
+                    self._load_packages()
                 elif param.upper() == 'PACKAGE':
                     pkg_name = args.pop(0)
                     if pkg_name is not None:
-                        self.load_package(pkg_name)
+                        self._load_package(pkg_name)
                         return (commands.Commands.SUCCESS, 'Package loaded', None)
                     else:
                         return (commands.Commands.SUCCESS_WARNING, 'Package not found!', None)
@@ -384,10 +381,9 @@ class PackageManager(object):
             else:
                 return (commands.Commands.INVALID_SUB_COMMAND, 'Invalid sub-command provided', None)
 
-    def load_package(self, pkg_name):
+    def _load_package(self, pkg_name):
         """TODO: Docstring for load_package.
         :returns: TODO
-
         """
         _db = TinyDB(UI_BUILDER_DB_PATH)
         _pkg_table = _db.table('Package_Index')
@@ -398,7 +394,7 @@ class PackageManager(object):
             self.packages_name_id_map[_pkg.name]=_pkg.id
             self.packages_map[_pkg.id] = pkg
 
-    def load_packages(self):
+    def _load_packages(self):
         """TODO: Docstring for load_packages.
         :returns: TODO
 
@@ -413,43 +409,57 @@ class PackageManager(object):
             self.packages_map[pkg_record.id] = pkg
         logger.debug('Packages map has been initialized successfully!')
 
-    def activate_packages(self):
-        """TODO: Docstring for activate_packages.
+    def install_packages_command(self, arg1):
+        """TODO: Docstring for install_packages_command.
 
         :arg1: TODO
         :returns: TODO
 
         """
+        pass
+
+    def _install_package(self, file_name):
+        """TODO: Docstring for install_package.
+        :arg1: TODO
+        :returns: TODO
+        """
+        self.installer.install_package(file_name)
+
+    def _install_packages(self):
+        """TODO: Docstring for install_packages.
+        :returns: TODO
+        """
+        self.installer.install_packages()
+
+    def _activate_packages(self):
+        """TODO: Docstring for activate_packages.
+        :arg1: TODO
+        :returns: TODO
+        """
         for pkg_id, pkg in self.packages_map:
             pkg.is_enabled = True
 
-    def activate_package(self, package_name):
+    def _activate_package(self, package_name):
         """TODO: Docstring for activate_package.
         :returns: TODO
-
         """
         pkg = self.packages_map[self.packages_name_id_map[package_name]]
         pkg.is_enabled = True
 
-    def deactivate_package(self, package_name):
+    def _deactivate_package(self, package_name):
         """TODO: Docstring for deactivate_package.
-
         :package_id: TODO
         :returns: TODO
-
         """
         pkg = self.packages_map[self.packages_name_id_map[package_name]]
         pkg.is_enabled = False
 
-
 class PackageDownloader(object):
-
     """Docstring for PackageDownloader. """
 
     def __init__(self):
         """TODO: to be defined1. """
         pass
-
 
 class PackageInstaller(object):
 
@@ -513,20 +523,28 @@ class PackageInstaller(object):
         """
         pass
 
-    def install_packages(self, *args, **kwargs):
+    def install_packages(self):
         """TODO: Docstring for install_packages.
         :arg1: TODO
         :returns: TODO
         """
         self._get_archive_files_list()
         for file in self.archive_files:
-            pkg_path = self._extract_package(file)
-            pkg = self._validate_package(pkg_path)
-            registered = self._register_package(pkg)
-            if registered == False:
-                logger.warn('Unable to register pkg from the following file, check logs for more info...{0}'.format(pkg_path))
-            else:
-                logger.info('Package from following file is installed...{0}'.format(pkg_path))
+            self.install_package(file)
+
+    def install_package(self, file_name):
+        """TODO: Docstring for install_package.
+        :returns: TODO
+
+        """
+        file = self.archive_manager.load_archive(file_name)
+        pkg_path = self._extract_package(file)
+        pkg = self._validate_package(pkg_path)
+        registered = self._register_package(pkg)
+        if registered == False:
+            logger.warn('Unable to register pkg from the following file, check logs for more info...{0}'.format(pkg_path))
+        else:
+            logger.info('Package from following file is installed...{0}'.format(pkg_path))
 
     def _extract_package(self, file):
         """TODO: Docstring for extract_package.
@@ -587,7 +605,6 @@ class PackageInstaller(object):
             comp_idx = comp_idx_table.upsert({'Id':comp.id, 'Name':comp.name, 'Package_Id':pkg.id, 'Package_Name':pkg.name}, comp_idx_q['Id'] == comp.id)
         return True
 
-
 class ArchiveManager(object):
 
     """Docstring for ArchiveManager. """
@@ -598,7 +615,7 @@ class ArchiveManager(object):
         self._config = ConfigParser.ConfigParser()
         self._config.read(os.path.join(conf_path, 'ui_builder.cfg'))
         self.archive_drop_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_DROP_IN_LOC))
-        self.archive_file_list = None
+         self.archive_file_list = None
 
     def archive_drop_location():
         doc = "The archive_drop_location property."
@@ -621,6 +638,24 @@ class ArchiveManager(object):
             del self._archive_file_list
         return locals()
     archive_file_list = property(**archive_file_list())
+
+    def load_archive(self, file_name):
+        """TODO: Docstring for load_archive.
+        :returns: TODO
+
+        """
+        for file in os.listdir(self.archive_drop_location):
+            if file == file_name:
+                file_path = os.path.join(self.archive_drop_location, file)
+                if os.path.isfile(file_path):
+                    try:
+                        utils.validate_file(file_path)
+                        if zipfile.is_zipfile(file_path):
+                            return file_path
+                    else:
+                        logger.debug('File is not zipped and is skipped...{0}'.format(file))
+                except Exception as msg:
+                    logger.warn('Invalid file and is skipped...{0}'.format(file))
 
     def load_archives(self):
         """TODO: Docstring for load_archives.
