@@ -10,6 +10,7 @@ import shutil
 import glob
 from tinydb import TinyDB, Query, where
 import commands
+from package_commands import PackageCommands
 
 
 PACKAGE_INSTALLER='PackageInstaller'
@@ -275,40 +276,6 @@ class PackageInfo(object):
         else:
             return None
 
-
-class PackageCommand(object):
-
-    """Docstring for PackageCommand. """
-    INSTALL = 'install'
-    UNINSTALL = 'uninstall'
-    ACTIVATE = 'activate'
-    DEACTIVATE = 'deactivate'
-    LIST = 'list'
-    SHOW = 'show'
-    LOAD = 'load'
-
-    def __init__(self, pkg_manager):
-        """TODO: to be defined1. """
-        self.package_manager = pkg_manager
-        self.pkg_mgr_commands_map = {}
-
-    def register_pkg_mgr_commands(self):
-        self.register_command(INSTALL, self.package_manager.installer.install_packages)
-        self.register_command(UNINSTALL, self.package_manager.installer.uninstall_packages)
-        self.register_command(LOAD, self.package_manager.load_packages_command)
-
-    def register_command(self, name, action):
-        """TODO: Docstring for register_commands.
-        :returns: TODO
-
-        """
-        cmd = commands.Command(name)
-        act = commands.Action(action)
-        cmd._actions.append(act)
-        commands.CommandManager.register_command('Packages', name, cmd)
-        self.pkg_mgr_commands_map[name] = cmd
-
-
 class PackageManager(object):
     def __init__(self, conf_path):
         """TODO: Docstring for __init__.
@@ -359,29 +326,7 @@ class PackageManager(object):
         for key, value in self.key_binding_config.items(PACKAGE_MANAGER):
             self._key_to_command_mapping[key] = value
 
-    def load_packages_command(self, *args):
-        """TODO: Docstring for load_packages_command.
-        :returns: TODO
-        """
-        if len(args) >= 2:
-            cmd = args.pop(0)
-            if cmd.upper() == 'LOAD':
-                param = args.pop(0)
-                if param.upper() == '--ALL':
-                    self._load_packages()
-                elif param.upper() == 'PACKAGE':
-                    pkg_name = args.pop(0)
-                    if pkg_name is not None:
-                        self._load_package(pkg_name)
-                        return (commands.Commands.SUCCESS, 'Package loaded', None)
-                    else:
-                        return (commands.Commands.SUCCESS_WARNING, 'Package not found!', None)
-                else:
-                    return (commands.Commands.INVALID_SUB_COMMAND_OPTION, 'Invalid option provided - {0}'.format(param), 'Valid options are --all, package <package_name>')
-            else:
-                return (commands.Commands.INVALID_SUB_COMMAND, 'Invalid sub-command provided', None)
-
-    def _load_package(self, pkg_name):
+    def load_package(self, pkg_name):
         """TODO: Docstring for load_package.
         :returns: TODO
         """
@@ -394,7 +339,7 @@ class PackageManager(object):
             self.packages_name_id_map[_pkg.name]=_pkg.id
             self.packages_map[_pkg.id] = pkg
 
-    def _load_packages(self):
+    def load_packages(self):
         """TODO: Docstring for load_packages.
         :returns: TODO
         """
@@ -408,28 +353,20 @@ class PackageManager(object):
             self.packages_map[pkg_record.id] = pkg
         logger.debug('Packages map has been initialized successfully!')
 
-    def install_packages_command(self, *args):
-        """TODO: Docstring for install_packages_command.
-        :arg1: TODO
-        :returns: TODO
-        """
-        if len(args) >= 2:
-            cmd = args.pop(0)
-
-    def _install_package(self, file_name):
+    def install_package(self, file_name):
         """TODO: Docstring for install_package.
         :arg1: TODO
         :returns: TODO
         """
         self.installer.install_package(file_name)
 
-    def _install_packages(self):
+    def install_packages(self):
         """TODO: Docstring for install_packages.
         :returns: TODO
         """
         self.installer.install_packages()
 
-    def _activate_packages(self):
+    def activate_packages(self):
         """TODO: Docstring for activate_packages.
         :arg1: TODO
         :returns: TODO
@@ -437,14 +374,14 @@ class PackageManager(object):
         for pkg_id, pkg in self.packages_map:
             pkg.is_enabled = True
 
-    def _activate_package(self, package_name):
+    def activate_package(self, package_name):
         """TODO: Docstring for activate_package.
         :returns: TODO
         """
         pkg = self.packages_map[self.packages_name_id_map[package_name]]
         pkg.is_enabled = True
 
-    def _deactivate_package(self, package_name):
+    def deactivate_package(self, package_name):
         """TODO: Docstring for deactivate_package.
         :package_id: TODO
         :returns: TODO
@@ -613,7 +550,7 @@ class ArchiveManager(object):
         self._config = ConfigParser.ConfigParser()
         self._config.read(os.path.join(conf_path, 'ui_builder.cfg'))
         self.archive_drop_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_DROP_IN_LOC))
-         self.archive_file_list = None
+        self.archive_file_list = None
 
     def archive_drop_location():
         doc = "The archive_drop_location property."
@@ -650,10 +587,10 @@ class ArchiveManager(object):
                         utils.validate_file(file_path)
                         if zipfile.is_zipfile(file_path):
                             return file_path
-                    else:
-                        logger.debug('File is not zipped and is skipped...{0}'.format(file))
-                except Exception as msg:
-                    logger.warn('Invalid file and is skipped...{0}'.format(file))
+                        else:
+                            logger.debug('File is not zipped and is skipped...{0}'.format(file))
+                    except Exception as msg:
+                        logger.warn('Invalid file and is skipped...{0}'.format(file))
 
     def load_archives(self):
         """TODO: Docstring for load_archives.
