@@ -154,7 +154,10 @@ class Command(object):
         """
         if option_name is not None:
             if option_name.startswith('--'):
-                self.options[option_name] = opt_valid_vals if len(opt_valid_vals) > 0 else ['ANY']
+                if isinstance(opt_valid_vals, bool):
+                    self.options[option_name] = opt_valid_vals
+                else:
+                    self.options[option_name] = opt_valid_vals if len(opt_valid_vals) > 0 else ['ANY']
                 return self
             else:
                 raise Exception('Option should start with "--" characters')
@@ -193,11 +196,12 @@ class CommandParser(object):
             keyword_options = {}
             values = []
             if len(opts) > 0:
+                opts = list(opts)
                 while(len(opts) > 0):
                     #get the first option  
                     opt = opts.pop(0)
                     #if it starts with "--"
-                    if opt.startwith('--'):
+                    if opt.startswith('--'):
                         #check whether next arg is an option or val for current opt
                         next_val = opts[0] if opts[0] is not None else None
                         if next_val is None:
@@ -209,9 +213,9 @@ class CommandParser(object):
                             options[opt] = True
                     else:
                         values.append(opt)
-            if len(kwargs) > 0:
-                for arg in kwargs:
-                    keyword_options[arg] = kwargs[arg]
+            if len(kwopts) > 0:
+                for arg in kwopts:
+                    keyword_options[arg] = kwopts[arg]
             if sub_command is None:
                 cmd = Command(command_name, desc, values, options, keyword_options)
                 self.commands[command_name] = cmd
@@ -220,6 +224,7 @@ class CommandParser(object):
                 cmd = Command(command_name, desc)
                 sub_cmd = Command(sub_command, sub_desc, values, options, keyword_options)
                 cmd.add_sub_command(sub_cmd)
+                self.commands[command_name] = cmd
                 return cmd
 
     def parse(self, command, sub_command=None, *args, **kwargs):
@@ -235,6 +240,7 @@ class CommandParser(object):
                 if sub_command is not None and cmd.sub_commands.__contains__(sub_command):
                     cmd = cmd.sub_commands[sub_command]
                 if len(args) > 0:
+                    args = list(args)
                     while(len(args) > 0):
                         arg = args.pop(0)
                         if arg.startswith('--'):
@@ -246,7 +252,7 @@ class CommandParser(object):
                                 else:
                                     return self.return_or_raise(arg=arg)
                             if next_val.startswith('--') == False:
-                                opt_val = opts.pop(0)
+                                opt_val = args.pop(0)
                                 if cmd.is_valid_option(arg, opt_val):
                                     self.parsed_options[arg] = opt_val
                                 else:

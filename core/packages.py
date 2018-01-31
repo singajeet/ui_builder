@@ -397,7 +397,6 @@ class PackageManager(object):
     def _load_packages(self):
         """TODO: Docstring for load_packages.
         :returns: TODO
-
         """
         _db = TinyDB(UI_BUILDER_DB_PATH)
         _package_table = _db.table('Package_Index')
@@ -409,14 +408,13 @@ class PackageManager(object):
             self.packages_map[pkg_record.id] = pkg
         logger.debug('Packages map has been initialized successfully!')
 
-    def install_packages_command(self, arg1):
+    def install_packages_command(self, *args):
         """TODO: Docstring for install_packages_command.
-
         :arg1: TODO
         :returns: TODO
-
         """
-        pass
+        if len(args) >= 2:
+            cmd = args.pop(0)
 
     def _install_package(self, file_name):
         """TODO: Docstring for install_package.
