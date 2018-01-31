@@ -500,6 +500,28 @@ class PackageInstaller(object):
         logger.debug('Pkg extracted to...{0}'.format(pkg_dir_name))
         return pkg_dir_name
 
+    def _validate_package(self, pkg_path):
+        """TODO: Docstring for validate_package.
+
+        :pkg_path: TODO
+        :returns: TODO
+
+        """
+        logger.debug('Validating package at location...{0}'.format(pkg_path))
+        #find .pkg files
+        pkg_file = glob.glob(os.path.join(pkg_path, '*.pkg'))
+        if len(pkg_file) == 1:
+            pkg = Package(pkg_path)
+            logger.debug('Package definition found at...{0}'.format(pkg_file[0]))
+            return pkg
+        elif len(pkg_file) > 1:
+            logger.warn('Multiple .pkg files found. A valid package should have only one .pkg file')
+            return None
+        else:
+            logger.warn('No .pkg file found. A package should have exactly one .pkg file')
+
+        return None
+
     def _register_package(self, pkg):
         """TODO: Docstring for install_package.
         :returns: TODO
