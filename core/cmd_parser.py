@@ -178,12 +178,16 @@ class CommandParser(object):
 
     """Docstring for CommandParser. """
 
+    INSTANCE = 'instance'
+    PARSED_CMD_VALUES = 'parsed_cmd_values'
+    PARSED_OPTIONS = 'parsed_options'
+    PARSED_KW_OPTIONS = 'parsed_kw_options'
+
     def __init__(self, raise_not_found_err = False):
         """TODO: to be defined1. """
         self.commands = {}
-        self.parsed_cmd_values = []
-        self.parsed_options = {}
-        self.parsed_keyword_options = {}
+        self.parsed_cmd = None
+        self.parsed_sub_cmd = None
         self.raise_not_found_error = raise_not_found_err
 
     def add_command(self, command_name, desc=None, sub_command=None, sub_desc=None, *opts, **kwopts):
@@ -198,7 +202,7 @@ class CommandParser(object):
             if len(opts) > 0:
                 opts = list(opts)
                 while(len(opts) > 0):
-                    #get the first option  
+                    #get the first option
                     opt = opts.pop(0)
                     #if it starts with "--"
                     if opt.startswith('--'):
@@ -218,13 +222,26 @@ class CommandParser(object):
                     keyword_options[arg] = kwopts[arg]
             if sub_command is None:
                 cmd = Command(command_name, desc, values, options, keyword_options)
-                self.commands[command_name] = cmd
+                cmd_dict = {}
+                cmd_dict[CommandParser.INSTANCE] = cmd
+                cmd_dict[CommandParser.PARSED_CMD_VALUES] = []
+                cmd_dict[CommandParser.PARSED_OPTIONS] = {}
+                cmd_dict[CommandParser.PARSED_KW_OPTIONS] = {}
+                self.commands[command_name] = cmd_dict
                 return cmd
             else:
                 cmd = Command(command_name, desc)
+                cmd_dict = {}
+                cmd_sub_dict = {}
+                cmd_dict[CommandParser.INSTANCE] = cmd
+                cmd_dict[sub_command] = cmd_sub_dict
                 sub_cmd = Command(sub_command, sub_desc, values, options, keyword_options)
+                cmd_sub_dict[CommandParser.INSTANCE] = sub_cmd
+                cmd_sub_dict[CommandParser.PARSED_CMD_VALUES] = []
+                cmd_sub_dict[CommandParser.PARSED_OPTIONS] = {}
+                cmd_sub_dict[CommandParser.PARSED_KW_OPTIONS] = {}
                 cmd.add_sub_command(sub_cmd)
-                self.commands[command_name] = cmd
+                self.commands[command_name] = cmd_dict
                 return cmd
 
     def parse(self, command, sub_command=None, *args, **kwargs):
@@ -235,10 +252,14 @@ class CommandParser(object):
 
         """
         if command is not None:
+            self.parsed_cmd = command
+            self.parsed_sub_cmd = sub_command
             if self.commands.__contains__(command):
-                cmd = self.commands[command]
+                cmd_dict = self.commands[command]
+                cmd = cmd_dict[CommandParser.INSTANCE]
                 if sub_command is not None and cmd.sub_commands.__contains__(sub_command):
                     cmd = cmd.sub_commands[sub_command]
+                    cmd_dict = cmd_dict[sub_command]
                 if len(args) > 0:
                     args = list(args)
                     while(len(args) > 0):
@@ -247,31 +268,31 @@ class CommandParser(object):
                             next_val = args[0] if args[0] is not None else None
                             if next_val is None:
                                 if cmd.is_valid_option(arg, True):
-                                    self.parsed_options[arg] = True
+                                    cmd_dict[CommandParser.PARSED_OPTIONS][arg] = True
                                     continue
                                 else:
                                     return self.return_or_raise(arg=arg)
                             if next_val.startswith('--') == False:
                                 opt_val = args.pop(0)
                                 if cmd.is_valid_option(arg, opt_val):
-                                    self.parsed_options[arg] = opt_val
+                                    cmd_dict[CommandParser.PARSED_OPTIONS][arg] = opt_val
                                 else:
                                     return self.return_or_raise(msg='Invalid value provided for option {0}'.format(arg), arg=opt_val)
                             else:
                                 if cmd.is_valid_option(arg, True):
-                                    self.parsed_options[arg] = True
+                                    cmd_dict[CommandParser.PARSED_OPTIONS][arg] = True
                                 else:
                                     return self.return_or_raise(arg=arg)
                         else:
                             if cmd.is_valid_value(arg):
-                                self.parsed_cmd_values.append(arg)
+                                cmd_dict[CommandParser.PARSED_CMD_VALUES].append(arg)
                             else:
                                 return self.return_or_raise(arg=arg)
                 if len(kwargs) > 0:
                     for kwarg in kwargs:
                         val = kwargs[kwarg]
                         if cmd.is_valid_kw_option(kwarg, val):
-                            self.parsed_keyword_options[kwarg] = val
+                            cmd_dict[CommandParser.PARSED_KW_OPTIONS][kwarg] = val
                         else:
                             return self.return_or_raise(msg='Either key is invalid or value for key [{0}] is not valid'.format(kwarg), arg=val)
             else:
@@ -290,3 +311,68 @@ class CommandParser(object):
         else:
             return valid
 
+    def get_cmd_values(self, cmd, sub_cmd):
+        """TODO: Docstring for get_cmd_values.
+        :returns: TODO
+
+        """
+        if sub_cmd is None:
+            cmd_dict = self.commands[cmd]
+            return cmd_dict[CommandParser.PARSED_CMD_VALUES]
+        else:
+            cmd_dict = self.commands[cmd]
+            cmd_dict = cmd_dict[sub_cmd]
+            return cmd_dict[CommandParser.PARSED_CMD_VALUES]
+
+    def get_current_cmd_values(self):
+        """TODO: Docstring for get_cmd_va.
+
+        :arg1: TODO
+        :returns: TODO
+
+        """
+        return self.get_cmd_values(self.parsed_cmd, self.parsed_sub_cmd)
+
+    def get_option(self, cmd, sub_cmd, opt_name):
+        """TODO: Docstring for get_option.
+        :returns: TODO
+
+        """
+        if sub_cmd is None:
+            cmd_dict = self.commands[cmd]
+            cmd_opts = cmd_dict[CommandParser.PARSED_OPTIONS]
+            return cmd_opts[opt_name]
+        else:
+            cmd_dict = self.commands[cmd]
+            cmd_dict = cmd_dict[sub_cmd]
+            cmd_opts = cmd_dict[CommandParser.PARSED_OPTIONS]
+            return cmd_opts[opt_name]
+
+    def get_current_cmd_option(self, opt_name):
+        """TODO: Docstring for get_current_cmd_option.
+        :returns: TODO
+
+        """
+        return self.get_option(self.parsed_cmd, self.parsed_sub_cmd, opt_name)
+
+    def get_keyword_option(self, cmd, sub_cmd, opt_name):
+        """TODO: Docstring for get_option.
+        :returns: TODO
+
+        """
+        if sub_cmd is None:
+            cmd_dict = self.commands[cmd]
+            cmd_opts = cmd_dict[CommandParser.PARSED_KW_OPTIONS]
+            return cmd_opts[opt_name]
+        else:
+            cmd_dict = self.commands[cmd]
+            cmd_dict = cmd_dict[sub_cmd]
+            cmd_opts = cmd_dict[CommandParser.PARSED_KW_OPTIONS]
+            return cmd_opts[opt_name]
+
+    def get_current_cmd_keyword_option(self, opt_name):
+        """TODO: Docstring for get_current_cmd_option.
+        :returns: TODO
+
+        """
+        return self.get_keyword_option(self.parsed_cmd, self.parsed_sub_cmd, opt_name)
