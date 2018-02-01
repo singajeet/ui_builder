@@ -1,5 +1,7 @@
-
-
+"""
+package_commands.py
+Contains commands for performing package related tasks
+"""
 
 
 class PackageCommands(object):

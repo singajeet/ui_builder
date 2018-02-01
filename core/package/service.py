@@ -85,7 +85,6 @@ class ComponentInfo(object):
             logger.error(err)
             raise Exception(err)
 
-
 class PackageInfo(object):
 
     """Docstring for Package. """
