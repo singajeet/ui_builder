@@ -188,6 +188,9 @@ class CommandParser(object):
         self.commands = {}
         self.parsed_cmd = None
         self.parsed_sub_cmd = None
+        self.parsed_values = []
+        self.parsed_options = {}
+        self.parsed_kw_options = {}
         self.raise_not_found_error = raise_not_found_err
 
     def add_command(self, command_name, desc=None, sub_command=None, sub_desc=None, *opts, **kwopts):
@@ -207,7 +210,9 @@ class CommandParser(object):
                     #if it starts with "--"
                     if opt.startswith('--'):
                         #check whether next arg is an option or val for current opt
-                        next_val = opts[0] if opts[0] is not None else None
+                        next_val = None
+                        if len(opts) > 0:
+                            next_val = opts[0] if opts[0] is not None else None
                         if next_val is None:
                             options[opt] = True
                             continue
@@ -260,12 +265,17 @@ class CommandParser(object):
                 if sub_command is not None and cmd.sub_commands.__contains__(sub_command):
                     cmd = cmd.sub_commands[sub_command]
                     cmd_dict = cmd_dict[sub_command]
+                cmd_dict[CommandParser.PARSED_OPTIONS]={}
+                cmd_dict[CommandParser.PARSED_KW_OPTIONS] = {}
+                cmd_dict[CommandParser.PARSED_CMD_VALUES] = []
                 if len(args) > 0:
                     args = list(args)
                     while(len(args) > 0):
                         arg = args.pop(0)
                         if arg.startswith('--'):
-                            next_val = args[0] if args[0] is not None else None
+                            next_val = None
+                            if len(args) > 0:
+                                next_val = args[0] if args[0] is not None else None
                             if next_val is None:
                                 if cmd.is_valid_option(arg, True):
                                     cmd_dict[CommandParser.PARSED_OPTIONS][arg] = True
@@ -299,6 +309,16 @@ class CommandParser(object):
                 return self.return_or_raise(msg='Command not found', arg=command)
         else:
             return self.return_or_raise(msg='Command can''t be empty')
+        if sub_command is None:
+            self.parsed_values = self.commands[command][CommandParser.PARSED_CMD_VALUES]
+            self.parsed_options = self.commands[command][CommandParser.PARSED_OPTIONS]
+            self.parsed_kw_options = self.commands[command][CommandParser.PARSED_KW_OPTIONS]
+            return self
+        else:
+            self.parsed_values = self.commands[command][sub_command][CommandParser.PARSED_CMD_VALUES]
+            self.parsed_options = self.commands[command][sub_command][CommandParser.PARSED_OPTIONS]
+            self.parsed_kw_options = self.commands[command][sub_command][CommandParser.PARSED_KW_OPTIONS]
+            return self
 
     def return_or_raise(self, valid=False, msg='Invalid argument provided', arg=None):
         """TODO: Docstring for return_or_raise.

@@ -2,8 +2,8 @@
 package_commands.py
 Contains commands for performing package related tasks
 """
+from ui_builder.core.provider import commands, cmd_parser
 import service
-
 
 class PackageCommands(object):
 
@@ -20,13 +20,15 @@ class PackageCommands(object):
         """TODO: to be defined1. """
         self.package_manager = pkg_manager
         self.pkg_mgr_commands_map = {}
+        self.cmd_parser = cmd_parser.CommandParser()
 
     def register_commands(self):
-        self.register_command(INSTALL, self.install_packages_command)
-        self.register_command(UNINSTALL, self.uninstall_packages_command)
-        self.register_command(LOAD, self.load_packages_command)
+        self.register_command(PackageCommands.INSTALL, 'Install all packages (or specific one) available in package drop location', self.install_packages_command, '--all')
+        self.register_command(PackageCommands.UNINSTALL, 'Uninstall specified package from the system', self.uninstall_packages_command)
+        self.register_command(PackageCommands.LOAD, 'Load all packages (or specified one) available in the system', self.load_packages_command, '--all')
+        self.register_command(PackageCommands.ACTIVATE, 'Activate all (or specified) package if installed',self.activate_packages_command, '--all')
 
-    def register_command(self, name, action):
+    def register_command(self, name, desc, action, *args, **kwargs):
         """TODO: Docstring for register_commands.
         :returns: TODO
 
@@ -36,28 +38,14 @@ class PackageCommands(object):
         cmd._actions.append(act)
         commands.CommandManager.register_command('Packages', name, cmd)
         self.pkg_mgr_commands_map[name] = cmd
+        self.cmd_parser.add_command('Package', 'Command for managing packages', name, desc, *args, **kwargs)
 
     def load_packages_command(self, *args, **kwargs):
         """TODO: Docstring for load_packages_command.
         :returns: TODO
         """
-        if len(args) >= 2:
-            cmd = args.pop(0)
-            if cmd.upper() == 'LOAD':
-                param = args.pop(0)
-                if param.upper() == '--ALL':
-                    self._load_packages()
-                elif param.upper() == 'PACKAGE':
-                    pkg_name = args.pop(0)
-                    if pkg_name is not None:
-                        self._load_package(pkg_name)
-                        return (commands.Commands.SUCCESS, 'Package loaded', None)
-                    else:
-                        return (commands.Commands.SUCCESS_WARNING, 'Package not found!', None)
-                else:
-                    return (commands.Commands.INVALID_SUB_COMMAND_OPTION, 'Invalid option provided - {0}'.format(param), 'Valid options are --all, package <package_name>')
-            else:
-                return (commands.Commands.INVALID_SUB_COMMAND, 'Invalid sub-command provided', None)
+        cmd = self.cmd_parser.parse('Package', PackageCommands.LOAD, *args, **kwargs)
+
 
     def install_packages_command(self, *args, **kwargs):
         """TODO: Docstring for install_packages_command.
@@ -74,3 +62,10 @@ class PackageCommands(object):
         """
         if len(args) >= 2:
             cmd = args.pop(0)
+
+    def activate_packages_command(self, *args, **kwargs):
+        """TODO: Docstring for activate_packages_command
+        :*arg: TODO
+        :returns: TODO
+        """
+        pass

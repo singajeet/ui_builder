@@ -1,15 +1,13 @@
 # coding=utf-8
-import utils
+from ui_builder.core import utils, init_log
 import ConfigParser
 import uuid
 import os
 import zipfile
 import logging
-import init_log
 import shutil
 import glob
 from tinydb import TinyDB, Query, where
-import commands
 from package_commands import PackageCommands
 
 

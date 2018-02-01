@@ -1,5 +1,0 @@
-[PackageManager]
-package_drop_in_loc=tests
-package_install_loc=tests/installed_pkgs
-pkg_overwrite_mode=off
-ui_builder_db=ui_builder.json.db
