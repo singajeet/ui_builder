@@ -2,6 +2,7 @@
 package_commands.py
 Contains commands for performing package related tasks
 """
+import service
 
 
 class PackageCommands(object):
@@ -20,10 +21,10 @@ class PackageCommands(object):
         self.package_manager = pkg_manager
         self.pkg_mgr_commands_map = {}
 
-    def register_pkg_mgr_commands(self):
-        self.register_command(INSTALL, self.package_manager.installer.install_packages)
-        self.register_command(UNINSTALL, self.package_manager.installer.uninstall_packages)
-        self.register_command(LOAD, self.package_manager.load_packages_command)
+    def register_commands(self):
+        self.register_command(INSTALL, self.install_packages_command)
+        self.register_command(UNINSTALL, self.uninstall_packages_command)
+        self.register_command(LOAD, self.load_packages_command)
 
     def register_command(self, name, action):
         """TODO: Docstring for register_commands.
@@ -36,8 +37,7 @@ class PackageCommands(object):
         commands.CommandManager.register_command('Packages', name, cmd)
         self.pkg_mgr_commands_map[name] = cmd
 
-
-    def load_packages_command(self, *args):
+    def load_packages_command(self, *args, **kwargs):
         """TODO: Docstring for load_packages_command.
         :returns: TODO
         """
@@ -59,8 +59,15 @@ class PackageCommands(object):
             else:
                 return (commands.Commands.INVALID_SUB_COMMAND, 'Invalid sub-command provided', None)
 
+    def install_packages_command(self, *args, **kwargs):
+        """TODO: Docstring for install_packages_command.
+        :arg1: TODO
+        :returns: TODO
+        """
+        if len(args) >= 2:
+            cmd = args.pop(0)
 
-    def install_packages_command(self, *args):
+    def uninstall_packages_command(self, *args, **kwargs):
         """TODO: Docstring for install_packages_command.
         :arg1: TODO
         :returns: TODO

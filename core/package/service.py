@@ -388,6 +388,14 @@ class PackageManager(object):
         pkg = self.packages_map[self.packages_name_id_map[package_name]]
         pkg.is_enabled = False
 
+    def deactivate_packages(self):
+        """TODO: Docstring for deactivate_packages.
+        :returns: TODO
+
+        """
+        for pkg_id, pkg in self.packages_map:
+            pkg.is_enabled = False
+
 class PackageDownloader(object):
     """Docstring for PackageDownloader. """
 
@@ -396,9 +404,7 @@ class PackageDownloader(object):
         pass
 
 class PackageInstaller(object):
-
     """Docstring for PackageInstaller. """
-
     def __init__(self, conf_path):
         """TODO: to be defined1. """
         logger.debug('Loading PackageInstaller Configuration...{0}'.format(conf_path))
@@ -408,9 +414,9 @@ class PackageInstaller(object):
         self.pkg_install_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_INSTALL_LOC))
         logger.debug('Packages will be installed in following location...{0}'.format(self.pkg_install_location))
         self.archive_manager = ArchiveManager(conf_path)
-
         global UI_BUILDER_DB_PATH
         UI_BUILDER_DB_PATH = self._config.get(PACKAGE_INSTALLER, UI_BUILDER_DB)
+
 
     def pkg_install_location():
         doc = "The pkg_install_location property."
@@ -448,14 +454,45 @@ class PackageInstaller(object):
     def _get_archive_files_list(self):
         self.archive_files = self.archive_manager.load_archives()
 
-    def uninstall_packages(self, *args, **kwargs):
+    def uninstall_packages(self, package_name):
         """TODO: Docstring for uninstall_packages.
-
         :*arg: TODO
         :returns: TODO
-
         """
-        pass
+        db = TinyDB(UI_BUILDER_DB_PATH)
+        q = Query()
+        pkg_idx = db.table('Package_Index')
+        pkg = pkg_idx.get(q['name'] == package_name)
+        if len(pkg) > 0:
+            if len(pkg) == 1:
+                pkg_tbl = db.table('Package')
+                pkg_record = pkg_tbl.get(Query()['Details']['id'] == pkg.id)
+                if len(pkg_record) > 0:
+                    if len(pkg_record) == 1:
+                        location = pkg_record['Location']
+                        if location is not None and os.path.exists(location):
+                            shutil.rmtree(location, ignore_errors=True)
+                            pkg_tbl.remove(Query['Details']['id'] == pkg.id)
+                            pkg_idx.remove(Query['id'] == pkg.id)
+                            del pkg
+                        elif location is not None and os.path.exists(location) == False:
+                            logger.warn('No folder exists at location [{0}], deleting entry for pkg from index'.format(location))
+                            pkg_tbl.remove(Query['Details']['id'] == pkg.id)
+                            pkg_idx.remove(Query['id'] == pkg.id)
+                            del pkg
+                        else:
+                            logger.warn('Package is in inconsistent state, removing package details from system...{0}'.format(pkg.name))
+                            pkg_tbl.remove(Query['Details']['id'] == pkg.id)
+                            pkg_idx.remove(Query['id'] == pkg.id)
+                            del pkg
+                    else:
+                        logger.warn('More than 1 package found with same name, package uninstall is skipped...{0}'.format(package_name))
+                else:
+                    logger.warn('No such pakage exist...{0}'.format(package_name))
+            else:
+                logger.warn('More than 1 package found, skipping uninstall process...{0}'.format(package_name))
+        else:
+            logger.warn('No such package exists...{0}'.format(package_name))
 
     def install_packages(self):
         """TODO: Docstring for install_packages.
@@ -469,7 +506,6 @@ class PackageInstaller(object):
     def install_package(self, file_name):
         """TODO: Docstring for install_package.
         :returns: TODO
-
         """
         file = self.archive_manager.load_archive(file_name)
         pkg_path = self._extract_package(file)
@@ -562,9 +598,7 @@ class PackageInstaller(object):
         return True
 
 class ArchiveManager(object):
-
     """Docstring for ArchiveManager. """
-
     def __init__(self, conf_path):
         """TODO: to be defined1. """
         self.id = uuid.uuid4()
