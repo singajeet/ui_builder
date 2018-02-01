@@ -363,6 +363,13 @@ class PackageManager(object):
         """
         self.installer.install_packages()
 
+    def uninstall_package(self, package_name):
+        """TODO: Docstring for uninstall_package.
+        :package_name: TODO
+        :returns: TODO
+        """
+        self.installer.uninstall_package(package_name)
+
     def activate_packages(self):
         """TODO: Docstring for activate_packages.
         :arg1: TODO
@@ -452,7 +459,7 @@ class PackageInstaller(object):
     def _get_archive_files_list(self):
         self.archive_files = self.archive_manager.load_archives()
 
-    def uninstall_packages(self, package_name):
+    def uninstall_package(self, package_name):
         """TODO: Docstring for uninstall_packages.
         :*arg: TODO
         :returns: TODO

@@ -27,6 +27,7 @@ class PackageCommands(object):
         self.register_command(PackageCommands.UNINSTALL, 'Uninstall specified package from the system', self.uninstall_packages_command)
         self.register_command(PackageCommands.LOAD, 'Load all packages (or specified one) available in the system', self.load_packages_command, '--all')
         self.register_command(PackageCommands.ACTIVATE, 'Activate all (or specified) package if installed',self.activate_packages_command, '--all')
+        self.register_command(PackageCommands.DEACTIVATE, 'Dectivate all (or specified) package if installed',self.deactivate_packages_command, '--all')
 
     def register_command(self, name, desc, action, *args, **kwargs):
         """TODO: Docstring for register_commands.
@@ -45,27 +46,67 @@ class PackageCommands(object):
         :returns: TODO
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.LOAD, *args, **kwargs)
-
+        #Case1: when --all option passed to the cmd
+        if len(cmd.parsed_options) > 0:
+                if cmd.parsed_options.__contains__('--all'):
+                        self.package_manager.load_packages()
+        #Case2: when no opt passed,only pkg-names passed
+        if len(cmd.parsed_values) > 0:
+                for pkg in cmd.parsed_values:
+                        self.package_manager.load_package(pkg)
 
     def install_packages_command(self, *args, **kwargs):
         """TODO: Docstring for install_packages_command.
         :arg1: TODO
         :returns: TODO
         """
-        if len(args) >= 2:
-            cmd = args.pop(0)
+        cmd = self.cmd_parser.parse('Package', PackageCommands.INSTALL, *args, **kwargs)
+        #Case1: when --all option passed to the cmd
+        if len(cmd.parsed_options) > 0:
+                if cmd.parsed_options.__contains__('--all'):
+                        self.package_manager.install_packages()
+        #Case2: when no opt passed,only pkg-names passed
+        if len(cmd.parsed_values) > 0:
+                for pkg in cmd.parsed_values:
+                        self.package_manager.install_package(pkg)
 
     def uninstall_packages_command(self, *args, **kwargs):
         """TODO: Docstring for install_packages_command.
         :arg1: TODO
         :returns: TODO
         """
-        if len(args) >= 2:
-            cmd = args.pop(0)
+        cmd = self.cmd_parser.parse('Package', PackageCommands.UNINSTALL, *args, **kwargs)
+        #Case1: when no opt passed,only pkg-names passed
+        if len(cmd.parsed_values) > 0:
+                for pkg in cmd.parsed_values:
+                        self.package_manager.uninstall_package(pkg)
 
     def activate_packages_command(self, *args, **kwargs):
         """TODO: Docstring for activate_packages_command
         :*arg: TODO
         :returns: TODO
         """
-        pass
+        cmd = self.cmd_parser.parse('Package', PackageCommands.ACTIVATE, *args, **kwargs)
+        #Case1: when --all option passed to the cmd
+        if len(cmd.parsed_options) > 0:
+                if cmd.parsed_options.__contains__('--all'):
+                        self.package_manager.activate_packages()
+        #Case2: when no opt passed,only pkg-names passed
+        if len(cmd.parsed_values) > 0:
+                for pkg in cmd.parsed_values:
+                        self.package_manager.activate_package(pkg)
+
+    def deactivate_packages_command(self, *args, **kwargs):
+        """TODO: Docstring for deactivate_packages_command
+        :*arg: TODO
+        :returns: TODO
+        """
+        cmd = self.cmd_parser.parse('Package', PackageCommands.DEACTIVATE, *args, **kwargs)
+        #Case1: when --all option passed to the cmd
+        if len(cmd.parsed_options) > 0:
+                if cmd.parsed_options.__contains__('--all'):
+                        self.package_manager.deactivate_packages()
+        #Case2: when no opt passed,only pkg-names passed
+        if len(cmd.parsed_values) > 0:
+                for pkg in cmd.parsed_values:
+                        self.package_manager.deactivate_package(pkg)

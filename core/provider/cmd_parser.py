@@ -174,6 +174,17 @@ class Command(object):
         if keyword_opt_name is not None:
             self.keyword_options[keyword_opt_name] = valid_vals if len(valid_vals) > 0 else ['ANY']
 
+class ParsedResult(object):
+    """Docstring for ParsedResult. """
+
+    def __init__(self, cmd_name, cmd):
+        """TODO: to be defined1. """
+        self.parsed_cmd_name = cmd_name
+        self.parsed_cmd = cmd
+        self.parsed_values = cmd[CommandParser.PARSED_CMD_VALUES]
+        self.parsed_options = cmd[CommandParser.PARSED_OPTIONS]
+        self.parsed_kw_options = cmd[CommandParser.PARSED_KW_OPTIONS]
+
 class CommandParser(object):
 
     """Docstring for CommandParser. """
@@ -186,11 +197,6 @@ class CommandParser(object):
     def __init__(self, raise_not_found_err = False):
         """TODO: to be defined1. """
         self.commands = {}
-        self.parsed_cmd = None
-        self.parsed_sub_cmd = None
-        self.parsed_values = []
-        self.parsed_options = {}
-        self.parsed_kw_options = {}
         self.raise_not_found_error = raise_not_found_err
 
     def add_command(self, command_name, desc=None, sub_command=None, sub_desc=None, *opts, **kwopts):
@@ -257,8 +263,6 @@ class CommandParser(object):
 
         """
         if command is not None:
-            self.parsed_cmd = command
-            self.parsed_sub_cmd = sub_command
             if self.commands.__contains__(command):
                 cmd_dict = self.commands[command]
                 cmd = cmd_dict[CommandParser.INSTANCE]
@@ -310,15 +314,11 @@ class CommandParser(object):
         else:
             return self.return_or_raise(msg='Command can''t be empty')
         if sub_command is None:
-            self.parsed_values = self.commands[command][CommandParser.PARSED_CMD_VALUES]
-            self.parsed_options = self.commands[command][CommandParser.PARSED_OPTIONS]
-            self.parsed_kw_options = self.commands[command][CommandParser.PARSED_KW_OPTIONS]
-            return self
+            result = ParsedResult(command, self.commands[command])
+            return result
         else:
-            self.parsed_values = self.commands[command][sub_command][CommandParser.PARSED_CMD_VALUES]
-            self.parsed_options = self.commands[command][sub_command][CommandParser.PARSED_OPTIONS]
-            self.parsed_kw_options = self.commands[command][sub_command][CommandParser.PARSED_KW_OPTIONS]
-            return self
+            result = ParsedResult(sub_command, self.commands[command][sub_command])
+            return result
 
     def return_or_raise(self, valid=False, msg='Invalid argument provided', arg=None):
         """TODO: Docstring for return_or_raise.
