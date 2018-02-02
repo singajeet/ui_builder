@@ -1,4 +1,5 @@
 # coding=utf-8
+#imports ---------------------------------
 from ui_builder.core import utils, init_log
 import ConfigParser
 import uuid
@@ -7,10 +8,14 @@ import zipfile
 import logging
 import shutil
 import glob
+import importlib
+import inspect
 from tinydb import TinyDB, Query, where
 from package_commands import PackageCommands
 
-
+#global variables -------------------------- 
+PACKAGE_DOWNLOADER = ''
+DOWNLOAD_SOURCE_HANDLERS = ''
 PACKAGE_INSTALLER='PackageInstaller'
 PKG_DROP_IN_LOC='package_drop_in_loc'
 PKG_INSTALL_LOC='package_install_loc'
@@ -19,8 +24,8 @@ UI_BUILDER_DB = 'ui_builder_db'
 
 PACKAGE_MANAGER = 'PackageManager'
 COMMAND_BINDINGS = 'key_to_command_bindings'
-#global UI_BUILDER_DB_PATH
 
+#init logs ----------------------------
 init_log.config_logs()
 logger = logging.getLogger(__name__)
 
@@ -43,6 +48,8 @@ class ComponentInfo(object):
         self.template_path = os.path.join(path, '{0}.html'.format(name))
         self.config_path = os.path.join(path,'{0}.comp'.format(name))
         self.security_id = None
+        self.package_dependencies = {}
+        self.components_dependencies = {}
 
     def _load_component_config(self):
         """TODO: Docstring for load_component.
@@ -61,6 +68,8 @@ class ComponentInfo(object):
         self.type = self.config_file.get('Details', 'Type')
         self.author = self.config_file.get('Details', 'Author')
         self.version = self.config_file.get('Details', 'Version')
+        if self.config_file.has_section('PackageDependencies'):
+            sel.package_dependencies = self.config_file.items('PackageDependencies')
         logger.info('Component loaded successfully...{0}'.format(self.name))
 
     def load_details(self, comp_id, db_conn):
@@ -396,17 +405,192 @@ class PackageManager(object):
     def deactivate_packages(self):
         """TODO: Docstring for deactivate_packages.
         :returns: TODO
+        """
+        for pkg_id, pkg in self.packages_map.iteritems():
+            pkg.is_enabled = False
+
+    def list_packages(self):
+        """TODO: Docstring for list_packages.
+        :returns: TODO
+        """
+        if self.packages_name_id_map is None or len(self.packages_name_id_map) <= 0:
+            self.load_packages()
+        return self.packages_name_id_map.keys()
+
+    def show_package(self, pkg_name):
+        """TODO: Docstring for show_package.
+        :returns: TODO
+        """
+        if self.packages_name_id_map is None or len(self.packages_name_id_map) <= 0:
+            self.load_packages()
+        if pkg_name is not None and pkg_name != '':
+            pkg_id = self.packages_name_id_map[pkg_name]
+            if pkg_id is not None:
+                pkg = self.packages_map[pkg_id]
+                _details = utils.FormattedStr()
+                _details.format('Name', pkg.name)
+                _details.format('Description', pkg.description)
+                _details.format('Location', pkg.location)
+                _details.format('Type', pkg.type)
+                _details.format('Author', pkg.author)
+                _details.format('Url', pkg.url)
+                _details.format('Company', pkg.company)
+                _details.format('Version', pkg.version)
+                _details.format('Is Enabled', pkg.is_enabled)
+                _details.format('Is Installed', pkg.is_installed)
+                for comp in self._comp_name_list:
+                    _details.format('Component', comp)
+                return _details.get_str()
+            else:
+                raise Exception('Package not found...{0}'.format(pkg_name))
+        else:
+            raise Exception('Package not found...{0}'.format(pkg_name))
+
+class PackageSource(object):
+
+    """Docstring for PackageSource. """
+    HTTP = 'http'
+    FTP = 'ftp'
+    LOCAL_DISK = 'local'
+    DEFAULT = 'default'
+
+    def __init__(self):
+        """TODO: to be defined1. """
+        self.source_name = None
+        self.source_type = PackageSource.DEFAULT
+        self.uri = None
+        self.auth_type = None
+
+    def check_source(self):
+        """TODO: Docstring for check_source.
+        :returns: TODO
 
         """
-        for pkg_id, pkg in self.packages_map:
-            pkg.is_enabled = False
+        pass
+
+    def download(self, pkg, to):
+        """TODO: Docstring for download.
+
+        :to: TODO
+        :returns: TODO
+
+        """
+        pass
+
+    def list(self):
+        """TODO: Docstring for list.
+        :returns: TODO
+
+        """
+        pass
+
+    def package_details(self, package_name):
+        """TODO: Docstring for package_details.
+
+        :package_name: TODO
+        :returns: TODO
+
+        """
+        pass
+
+    def find_package(self, package_name):
+        """TODO: Docstring for find_package.
+
+        :package_name: TODO
+        :returns: TODO
+
+        """
+        pass
 
 class PackageDownloader(object):
     """Docstring for PackageDownloader. """
 
-    def __init__(self):
+    def __init__(self, conf_path):
         """TODO: to be defined1. """
-        pass
+        self.config = ConfigParser.ConfigParser()
+        self.config.read(os.path.join(conf_path, 'ui_builder.cfg'))
+        self.download_src_modules_paths = self.config.get(PACKAGE_DOWNLOADER, DOWNLOAD_SOURCE_HANDLERS)
+        self.pkg_drop_in_loc = os.path.abspath(self.config.get(PACKAGE_INSTALLER, PKG_DROP_IN_LOC))
+        self.download_src = {}
+        for src in self.download_src_modules_paths:
+            if os.path.exists(src):
+                module_files = os.listdir(src)
+                if module_files is not None:
+                    for mod_file in module_files:
+                        if os.path.isfile(os.path.join(src, mod_file)):
+                            if mod_file.endswith('.py'):
+                                module_name = mod_file.rstrip('.py')
+                                module = importlib.import_module(module_name)
+                                for member in dir(module):
+                                    obj = getattr(module, member)
+                                    if inspect.isclass(obj) and issubclass(obj, PackageSource) and obj is not PackageSource:
+                                        self.download_src[obj.source_name] = obj
+
+    def download(self, src_name, package_name):
+        """TODO: Docstring for download.
+        :returns: TODO
+
+        """
+        if src_name is None or package_name is None:
+            raise Exception('Source or Package name is null')
+        if self.download_src.__contains__(src_name):
+            downloader_class = self.download_src[src_name]
+            downloader = downloader_class()
+            downloader.download(package_naame, self.pkg_drop_in_loc)
+        else:
+            raise Exception('No such download source is configured...{0}'.format(src_name))
+
+    def list_sources(self):
+        """TODO: Docstring for list_sources.
+        :returns: TODO
+
+        """
+        return self.download_src.keys if self.download_src is not None else []
+
+    def list_packages(self):
+        """TODO: Docstring for list_packages.
+        :returns: TODO
+
+        """
+        packages = {}
+        if self.download_src is not None and len(self.download_src) > 0:
+            for src_name, src in self.download_src.iteritems():
+                packages[src_name] = src.list()
+
+        return packages
+
+    def list_packages_from_src(self, source_name):
+        """TODO: Docstring for list_packages_from_src.
+
+        :source_name: TODO
+        :returns: TODO
+
+        """
+        if source_name is not None and len(self.download_src) > 0:
+            if self.download_src.__contains__(source_name):
+                return self.download_src[source_name].list()
+            else:
+                raise Exception('No such download source configured...{0}'.format(source_name))
+        else:
+            raise Exception('No download source is configured')
+
+    def find_package(self, src_name, pkg_name):
+        """TODO: Docstring for find_package.
+        :src_name: TODO
+        :pkg_name: TODO
+        :returns: TODO
+        """
+        if src_name is not None and pkg_name is not None:
+            if self.download_src.__contains__(src_name):
+                src = self.download_src[src_name]
+                if src is not None:
+                    return src.find_package(pkg_name)
+                else:
+                        raise Exception('Source is not initialized yet...{0}'.format(src_name))
+            else:
+                raise Exception('No such source configured...{0}'.format(src_name))
+        else:
+            raise Exception('Source and Package names can''t be null')
 
 class PackageInstaller(object):
     """Docstring for PackageInstaller. """
@@ -422,7 +606,6 @@ class PackageInstaller(object):
         global UI_BUILDER_DB_PATH
         UI_BUILDER_DB_PATH = self._config.get(PACKAGE_INSTALLER, UI_BUILDER_DB)
 
-
     def pkg_install_location():
         doc = "The pkg_install_location property."
         def fget(self):
@@ -433,6 +616,7 @@ class PackageInstaller(object):
             del self._pkg_install_location
         return locals()
     pkg_install_location = property(**pkg_install_location())
+
 
     def archive_manager():
         doc = "The archive_manager property."
@@ -534,7 +718,6 @@ class PackageInstaller(object):
             logger.info('Overwrite mode is on, package content will be replaced with new files')
             if os.path.exists(pkg_dir_name):
                 shutil.rmtree(pkg_dir_name)
-
         zip_pkg = zipfile.ZipFile(file)
         zip_pkg.extractall(self.pkg_install_location)
         logger.debug('Pkg extracted to...{0}'.format(pkg_dir_name))
@@ -542,10 +725,8 @@ class PackageInstaller(object):
 
     def _validate_package(self, pkg_path):
         """TODO: Docstring for validate_package.
-
         :pkg_path: TODO
         :returns: TODO
-
         """
         logger.debug('Validating package at location...{0}'.format(pkg_path))
         #find .pkg files
@@ -559,13 +740,11 @@ class PackageInstaller(object):
             return None
         else:
             logger.warn('No .pkg file found. A package should have exactly one .pkg file')
-
         return None
 
     def _register_package(self, pkg):
         """TODO: Docstring for install_package.
         :returns: TODO
-
         """
         logger.debug('Loading package details stored at...{0}'.format(pkg._location))
         pkg._load_pkg_config()
@@ -582,11 +761,9 @@ class PackageInstaller(object):
         pkg_details['_components'] = None
         pkg_entry = pkg_table.upsert({'Location':pkg._location, 'Details':pkg_details}, q['Details']['id'] == pkg.id)
         logger.debug('Package with name [{0}] and id [{1}] has been registered'.format(pkg.name, pkg.id))
-
         pkg_idx_table = db.table('Package_Index')
         idx_q = Query()
         pkg_idx = pkg_idx_table.upsert({'Id':pkg.id, 'Name':pkg.name}, idx_q['Id'] == pkg.id)
-
         logger.debug('Processing child components now...')
         comp_table = db.table('Components')
         for name, comp in pkg._components.iteritems():
@@ -596,7 +773,6 @@ class PackageInstaller(object):
             comp_q = Query()
             comp_entry = comp_table.upsert({'Location':comp.base_path, 'Details':comp_details}, comp_q['Details']['id'] == comp.id)
             logger.debug('Component with name [{0}] and id [{1}] has been registered under package [{2}]'.format(comp.name, comp.id, pkg.name))
-
             comp_idx_table = db.table('Components_Index')
             comp_idx_q = Query()
             comp_idx = comp_idx_table.upsert({'Id':comp.id, 'Name':comp.name, 'Package_Id':pkg.id, 'Package_Name':pkg.name}, comp_idx_q['Id'] == comp.id)
@@ -610,7 +786,7 @@ class ArchiveManager(object):
         self._config = ConfigParser.ConfigParser()
         self._config.read(os.path.join(conf_path, 'ui_builder.cfg'))
         self.archive_drop_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_DROP_IN_LOC))
-        self.archive_file_list = None
+        self.archive_file_list  = None
 
     def archive_drop_location():
         doc = "The archive_drop_location property."

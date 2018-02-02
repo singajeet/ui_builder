@@ -8,3 +8,7 @@ Version=1.0.0.0
 Url=http://adapt-tech.com
 Company=Armin Inc
 Components=Button, TextBox
+
+[PackageDependencies]
+Package1=1.0.0.0
+Package2=1.1.0.0

@@ -14,3 +14,32 @@ def validate_file(file):
     else:
         raise IOError('File not found {0}'.format(file))
 
+class FormattedStr(object):
+
+    """Docstring for FormattedStr. """
+
+    def __init__(self):
+        """TODO: to be defined1. """
+        self.formatted_txt = ''
+
+    def format(self, label, val):
+        """TODO: Docstring for format.
+        :returns: TODO
+
+        """
+        self.formatted_txt += '{0}: {1}\n'.format(label, val)
+
+    def get_str(self):
+        """TODO: Docstring for get_str.
+        :returns: TODO
+
+        """
+        return self.formatted_txt
+
+    def print_str(self):
+        """TODO: Docstring for print.
+        :returns: TODO
+
+        """
+        if self.formatted_txt != '':
+            print(self.formatted_txt)
