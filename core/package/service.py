@@ -13,7 +13,7 @@ import inspect
 from tinydb import TinyDB, Query, where
 from package_commands import PackageCommands
 
-#global variables -------------------------- 
+#global variables --------------------------
 PACKAGE_DOWNLOADER = ''
 DOWNLOAD_SOURCE_HANDLERS = ''
 PACKAGE_INSTALLER='PackageInstaller'
@@ -30,7 +30,6 @@ init_log.config_logs()
 logger = logging.getLogger(__name__)
 
 class ComponentInfo(object):
-
     """Docstring for Component. """
 
     def __init__(self, name, path):
@@ -56,7 +55,7 @@ class ComponentInfo(object):
         :returns: TODO
 
         """
-        self.config_file = utils.CheckedConfigParser() 
+        self.config_file = utils.CheckedConfigParser()
         self.config_file.read(self.config_path)
         if self.name != self.config_file.get('Details', 'Name'):
             err = 'Can not load component as filename[{0}] and name in config does not match'.format(self.name)
@@ -93,7 +92,6 @@ class ComponentInfo(object):
             raise Exception(err)
 
 class PackageInfo(object):
-
     """Docstring for Package. """
 
     def __init__(self, location=None):
@@ -113,7 +111,7 @@ class PackageInfo(object):
         self._comp_name_list = []
         self._comp_name_id_map = {}
         self._components = {}
-	self.package_dependencies = {}
+        self.package_dependencies = {}
 
     def config_file():
         doc = "The config_file property."
@@ -189,7 +187,7 @@ class PackageInfo(object):
             self.version = self.config_file.get_or_none('Details', 'Version')
             self.company = self.config_file.get_or_none('Details', 'Company')
             self._comp_name_list = self.config_file.get_or_none('Details', 'Components').split(',')
-	    self.package_dependencies = self.conf_file.items('PackageDependencies') if self.conf_file.has_section('PackageDependencies') else {}
+            self.package_dependencies = self.conf_file.items('PackageDependencies') if self.conf_file.has_section('PackageDependencies') else {}
             logger.info('Package details loaded successfully...{0}'.format(self.name))
             logger.debug('Registring child components now...')
             self._load_child_comp_config()
@@ -306,6 +304,8 @@ class PackageManager(object):
         self.installer = PackageInstaller(conf_path)
         self.commands = PackageCommands(self)
         self.commands.register_commands()
+        self.downloader = PackageDownloader(conf_path)
+        self.archive_mgr = ArchiveManager(conf_path)
 
     def packages_name_id_map():
         doc = "The packages_name_id_map property."
@@ -365,7 +365,15 @@ class PackageManager(object):
         :arg1: TODO
         :returns: TODO
         """
-        self.installer.install_package(file_name)
+        if self.archive_mgr.is_package_available(file_name):
+            self.installer.install_package(file_name)
+        else:
+            status = self.download_package(file_name)
+            if status == 'SUCCESS':
+                self.installer.install_package(file_name)
+                return status
+            else:
+                raise Exception('Package not found...{0}'.format(file_name))
 
     def install_packages(self):
         """TODO: Docstring for install_packages.
@@ -416,7 +424,10 @@ class PackageManager(object):
         """
         if self.packages_name_id_map is None or len(self.packages_name_id_map) <= 0:
             self.load_packages()
-        return self.packages_name_id_map.keys()
+        pkgs = self.downloader.list_packages()
+        if pkgs is not None:
+            pkgs['Local Packages'] = self.packages_name_id_map.keys()
+        return pkgs
 
     def show_package(self, pkg_name):
         """TODO: Docstring for show_package.
@@ -443,12 +454,44 @@ class PackageManager(object):
                     _details.format('Component', comp)
                 return _details.get_str()
             else:
-                raise Exception('Package not found...{0}'.format(pkg_name))
+                return 'Unable to get details as package [{0}] is not availabel locally\n'\
+                        'Kindly download package first using below command:\n'\
+                        'Package download <pkg name>'.format(pkg_name)
         else:
-            raise Exception('Package not found...{0}'.format(pkg_name))
+                raise Exception('Package not found...{0}'.format(pkg_name))
+
+    def download_package(self, pkg_name):
+        """TODO: Docstring for download_package.
+        :pkg_nam: TODO
+        :returns: TODO
+        """
+        for src_name, src in self.downloader.download_src.iteritems():
+            result = self.downloader.find_package(src_name, pkg_name)
+            if result is not None:
+                return self.downloader.download(src_name, pkg_name)
+        return 'NOT_FOUND'
+
+    def list_sources(self):
+        """TODO: Docstring for list_sources.
+        :returns: TODO
+
+        """
+        return self.downloader.download_src
+
+    def find_package(self, pkg_name):
+        """TODO: Docstring for find_package.
+
+        :pkg_name: TODO
+        :returns: TODO
+
+        """
+        for src_name, src in self.downloader.download_src.iteritems():
+            result = self.downloader.find_package(src_name, pkg_name)
+            if result is not None:
+                return result
+        return None
 
 class PackageSource(object):
-
     """Docstring for PackageSource. """
     HTTP = 'http'
     FTP = 'ftp'
@@ -476,7 +519,7 @@ class PackageSource(object):
         :returns: TODO
 
         """
-        pass
+        return 'SUCCESS'
 
     def list(self):
         """TODO: Docstring for list.
@@ -537,7 +580,7 @@ class PackageDownloader(object):
         if self.download_src.__contains__(src_name):
             downloader_class = self.download_src[src_name]
             downloader = downloader_class()
-            downloader.download(package_naame, self.pkg_drop_in_loc)
+            return downloader.download(package_naame, self.pkg_drop_in_loc)
         else:
             raise Exception('No such download source is configured...{0}'.format(src_name))
 
@@ -849,4 +892,22 @@ class ArchiveManager(object):
             else:
                 logger.debug('Not a file and is skipped...{0}'.format(file))
 
-        return self.archive_file_list
+        return self.archive_file_listi
+
+    def is_package_available(self, pkg_file_name):
+        """TODO: Docstring for is_package_available.
+        :pkg_file_name: TODO
+        :returns: TODO
+        """
+        if pkg_file_name is not None:
+            if pkg_file_name.endswith('.pkg'):
+                pkg_file = os.path.join(self.archive_drop_location, pkg_file_name)
+            else:
+                pkg_file_name = '{0}.pkg'.format(pkg_file_name)
+                pkg_file = os.path.join(self.archive_drop_location, pkg_file_name)
+            if os.path.exists(pkg_file):
+                return True
+            else:
+                return False
+        else:
+            return False
