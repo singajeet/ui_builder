@@ -49,27 +49,27 @@ class ComponentInfo(object):
         self.config_path = os.path.join(path,'{0}.comp'.format(name))
         self.security_id = None
         self.package_dependencies = {}
-        self.components_dependencies = {}
+        self.component_dependencies = {}
 
     def _load_component_config(self):
         """TODO: Docstring for load_component.
         :returns: TODO
 
         """
-        self.config_file = ConfigParser.ConfigParser()
+        self.config_file = utils.CheckedConfigParser() 
         self.config_file.read(self.config_path)
         if self.name != self.config_file.get('Details', 'Name'):
             err = 'Can not load component as filename[{0}] and name in config does not match'.format(self.name)
             logger.error(err)
             raise NameError(err)
 
-        self.id = self.config_file.get('Details', 'Id')
-        self.description = self.config_file.get('Details', 'Description')
-        self.type = self.config_file.get('Details', 'Type')
-        self.author = self.config_file.get('Details', 'Author')
-        self.version = self.config_file.get('Details', 'Version')
-        if self.config_file.has_section('PackageDependencies'):
-            sel.package_dependencies = self.config_file.items('PackageDependencies')
+        self.id = self.config_file.get_or_none('Details', 'Id')
+        self.description = self.config_file.get_or_none('Details', 'Description')
+        self.type = self.config_file.get_or_none('Details', 'Type')
+        self.author = self.config_file.get_or_none('Details', 'Author')
+        self.version = self.config_file.get_or_none('Details', 'Version')
+        self.package_dependencies = self.config_file.items('PackageDependencies') if self.config_file.has_section('PackageDependencies') else {}
+        self.component_dependencies = self.config_file.items('ComponentDependencies') if self.config_file.has_section('ComponentDependencies') else {}
         logger.info('Component loaded successfully...{0}'.format(self.name))
 
     def load_details(self, comp_id, db_conn):
@@ -113,6 +113,7 @@ class PackageInfo(object):
         self._comp_name_list = []
         self._comp_name_id_map = {}
         self._components = {}
+	self.package_dependencies = {}
 
     def config_file():
         doc = "The config_file property."
@@ -177,21 +178,21 @@ class PackageInfo(object):
             logger.error(err)
             raise NameError(err)
         else:
-            self.config_file = ConfigParser.ConfigParser()
+            self.config_file = utils.CheckedConfigParser()
             self.config_file.read(os.path.join(self.location, conf_file))
-            self.id = self.config_file.get('Details', 'Id')
-            self.name = self.config_file.get('Details', 'Name')
-            self.description = self.config_file.get('Details', 'Description')
-            self.type = self.config_file.get('Details', 'Type')
-            self.author = self.config_file.get('Details', 'Author')
-            self.url = self.config_file.get('Details', 'Url')
-            self.version = self.config_file.get('Details', 'Version')
-            self.company = self.config_file.get('Details', 'Company')
-            self._comp_name_list = self.config_file.get('Details', 'Components').split(',')
+            self.id = self.config_file.get_or_none('Details', 'Id')
+            self.name = self.config_file.get_or_none('Details', 'Name')
+            self.description = self.config_file.get_or_none('Details', 'Description')
+            self.type = self.config_file.get_or_none('Details', 'Type')
+            self.author = self.config_file.get_or_none('Details', 'Author')
+            self.url = self.config_file.get_or_none('Details', 'Url')
+            self.version = self.config_file.get_or_none('Details', 'Version')
+            self.company = self.config_file.get_or_none('Details', 'Company')
+            self._comp_name_list = self.config_file.get_or_none('Details', 'Components').split(',')
+	    self.package_dependencies = self.conf_file.items('PackageDependencies') if self.conf_file.has_section('PackageDependencies') else {}
             logger.info('Package details loaded successfully...{0}'.format(self.name))
             logger.debug('Registring child components now...')
             self._load_child_comp_config()
-
 
     def _load_child_comp_config(self):
         """TODO: Docstring for load_components.

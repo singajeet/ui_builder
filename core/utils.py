@@ -2,6 +2,7 @@
 Utility functions
 """
 from os import path
+import ConfigParser
 
 def validate_file(file):
     """TODO: Docstring for validate_file.
@@ -43,3 +44,18 @@ class FormattedStr(object):
         """
         if self.formatted_txt != '':
             print(self.formatted_txt)
+
+
+class CheckedConfigParser(ConfigParser.ConfigParser):
+    def get_or_none(self, section, option):
+        """TODO: Docstring for get_or_none.
+
+        :section: TODO
+        :option: TODO
+        :returns: TODO
+
+        """
+        if self.has_section(section) and self.has_option(option):
+            return self.get(section, option)
+        else:
+            return None
