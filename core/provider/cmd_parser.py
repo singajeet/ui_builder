@@ -1,8 +1,8 @@
 
 
-class Command(object):
+class CommandTemplate(object):
 
-    """Docstring for Command. """
+    """Docstring for TemplateCommand. """
 
     def __init__(self, cmd_name, desc=None, cmd_valid_vals=['ANY'], opts={}, keyword_opts={}):
         """TODO: to be defined1. """
@@ -36,55 +36,55 @@ class Command(object):
         return locals()
     command_valid_values = property(**command_valid_values())
 
-    def add_sub_command(self, sub_cmd):
-        """TODO: Docstring for add_sub_command.
+    def add_sub_cmd_template(self, sub_cmd):
+        """TODO: Docstring for add_sub_cmd_template.
 
         :sub_cmd: TODO
         :returns: TODO
 
         """
-        #if current cmd is an sub-cmd, don't allow addition further sub cmds
+        #if current cmd is an sub-cmd, don't allow addition of further sub cmds templates
         if self.is_sub_command == True:
-            raise Exception('Nested sub-commands are not allowed')
-        #if the sub-cmd passed already have an sub-cmd, do not add to prevent nested sub-cmds
+            raise Exception('Nested sub-command templates are not allowed')
+        #if the sub-cmd passed already have an sub-cmd, do not add template to prevent nested sub-cmd templates
         if sub_cmd is not None and sub_cmd.have_sub_commands == True:
-            raise Exception('Nested sub-commands are not allowed')
+            raise Exception('Nested sub-command templates are not allowed')
         if sub_cmd is not None:
-            if isinstance(sub_cmd, Command):
+            if isinstance(sub_cmd, CommandTemplate):
                 self.sub_commands[sub_cmd.command_name] = sub_cmd
                 sub_cmd.is_sub_command = True
                 self.have_sub_commands = True
                 return sub_cmd
             else:
-                raise ValueError('Invalid command type {0}! Only Command type are accepted'.format(sub_cmd))
+                raise ValueError('Invalid template type {0}! Only CommandTemplate type are accepted'.format(sub_cmd))
         else:
-            raise ValueError('Can''t add an empty command')
+            raise ValueError('Can''t add an empty template')
 
-    def add_sub_commands_by_name(self, sub_cmd_dict={}):
-        """TODO: Docstring for add_sub_commands_by_name.
+    def add_sub_cmd_templates_by_name(self, sub_cmd_dict={}):
+        """TODO: Docstring for add_sub_cmd_templates_by_name.
         :returns: TODO
 
         """
         if len(sub_cmd_dict) > 0:
             for cmd_name in sub_cmd_dict:
-                self.add_sub_command_by_name(cmd_name, None, sub_cmd_dict[cmd_name])
+                self.add_sub_cmd_template_by_name(cmd_name, None, sub_cmd_dict[cmd_name])
             return self
 
-    def add_sub_command_by_name(self, sub_cmd_name, desc=None, cmd_valid_vals=['ANY']):
-        """TODO: Docstring for add_sub_command.
+    def add_sub_cmd_template_by_name(self, sub_cmd_name, desc=None, cmd_valid_vals=['ANY']):
+        """TODO: Docstring for add_sub_cmd_template_by_name
         :returns: TODO
 
         """
         if sub_cmd_name is not None:
-            self.sub_commands[sub_cmd_name] = Command(sub_cmd_name, desc, cmd_valid_vals)
+            self.sub_commands[sub_cmd_name] = CommandTemplate(sub_cmd_name, desc, cmd_valid_vals)
             (self.sub_commands[sub_cmd_name]).is_sub_command = True
             self.have_sub_commands = True
             return self.sub_commands[sub_cmd_name]
         else:
-            raise Exception('Invalid sub-command name')
+            raise Exception('Invalid sub-command template name')
 
     def is_valid_kw_option(self, opt_name, opt_val):
-        """TODO: Docstring for is_valid_.
+        """TODO: Docstring for is_valid_kw_option.
 
         :arg1: TODO
         :returns: TODO
@@ -174,6 +174,100 @@ class Command(object):
         if keyword_opt_name is not None:
             self.keyword_options[keyword_opt_name] = valid_vals if len(valid_vals) > 0 else ['ANY']
 
+    def error_missing_arguments(self, raise_not_found_err=False):
+        """TODO: Docstring for error_missing_arguments.
+        :returns: TODO
+
+        """
+        err = 'Missing required arguments.\n'\
+                'Valid arguments list: {0}'.format(self.command_valid_values)
+        if raise_not_found_err:
+            raise Exception(err)
+        else:
+            return err
+
+    def error_invalid_arguments(self, raise_not_found_err=False):
+        """TODO: Docstring for error_invalid_arguments.
+        :returns: TODO
+
+        """
+        err = 'Invalid arguments value provided.\n'\
+                'Valid arguments list: {0}'.format(self.command_valid_values)
+        if raise_not_found_err:
+            raise Exception(err)
+        else:
+            return err
+
+    def error_missing_options(self, raise_not_found_err=False):
+        """TODO: Docstring for error_missing_arguments.
+        :returns: TODO
+
+        """ 
+        err = 'Missing required options.\n'\
+                'Valid options list: {0}'.format(self.options)
+        if raise_not_found_err:
+            raise Exception(err)
+        else:
+            return err
+
+    def error_invalid_options(self, raise_not_found_err=False):
+        """TODO: Docstring for error_invalid_options.
+
+        :e: TODO
+        :returns: TODO
+
+        """ 
+        err = 'Invalid options value provided.\n'\
+                'Valid options list: {0}'.format(self.options)
+        if raise_not_found_err:
+            raise Exception(err)
+        else:
+            return err
+
+    def error_missing_kw_options(self, raise_not_found_err=False):
+        """TODO: Docstring for error_missing_kw_options.
+
+        :raise_not_found_err: TODO
+        :returns: TODO
+
+        """ 
+        err = 'Missing keyword arguments.\n'\
+                'Valid keyword arguments list: {0}'.format(self.keyword_options)
+        if raise_not_found_err:
+            raise Exception(err)
+        else:
+            return err
+
+    def error_invalid_kw_options(self, raise_not_found_err=False):
+        """TODO: Docstring for error_invalid_kw_options.
+
+        :raise_not_found_err: TODO
+        :returns: TODO
+
+        """ 
+        err = 'Invalid keyword arguments provided.\n'\
+                'Valid arguments list: {0}'.format(self.keyword_options)
+        if raise_not_found_err:
+            raise Exception(err)
+        else:
+            return err
+
+    def get_help(self):
+        """TODO: Docstring for get_help.
+        :returns: TODO
+
+        """
+        help_msg = '{0}'.format(self.description)
+        help_msg += '{0} <{1}> [{2}]'.format(self.command_name, self.command_valid_values, self.options)
+        return help_msg
+
+    def print_help(self):
+        """TODO: Docstring for print_help.
+        :returns: TODO
+
+        """
+        print(self.get_help())
+
 class ParsedResult(object):
     """Docstring for ParsedResult. """
 
@@ -199,8 +293,8 @@ class CommandParser(object):
         self.commands = {}
         self.raise_not_found_error = raise_not_found_err
 
-    def add_command(self, command_name, desc=None, sub_command=None, sub_desc=None, *opts, **kwopts):
-        """TODO: Docstring for add_command.
+    def add_cmd_template(self, command_name, desc=None, sub_command=None, sub_desc=None, *opts, **kwopts):
+        """TODO: Docstring for add_cmd_template.
         :returns: TODO
 
         """
@@ -232,7 +326,7 @@ class CommandParser(object):
                 for arg in kwopts:
                     keyword_options[arg] = kwopts[arg]
             if sub_command is None:
-                cmd = Command(command_name, desc, values, options, keyword_options)
+                cmd = CommandTemplate(command_name, desc, values, options, keyword_options)
                 cmd_dict = {}
                 cmd_dict[CommandParser.INSTANCE] = cmd
                 cmd_dict[CommandParser.PARSED_CMD_VALUES] = []
@@ -241,17 +335,17 @@ class CommandParser(object):
                 self.commands[command_name] = cmd_dict
                 return cmd
             else:
-                cmd = Command(command_name, desc)
+                cmd = CommandTemplate(command_name, desc)
                 cmd_dict = {}
                 cmd_sub_dict = {}
                 cmd_dict[CommandParser.INSTANCE] = cmd
                 cmd_dict[sub_command] = cmd_sub_dict
-                sub_cmd = Command(sub_command, sub_desc, values, options, keyword_options)
+                sub_cmd = CommandTemplate(sub_command, sub_desc, values, options, keyword_options)
                 cmd_sub_dict[CommandParser.INSTANCE] = sub_cmd
                 cmd_sub_dict[CommandParser.PARSED_CMD_VALUES] = []
                 cmd_sub_dict[CommandParser.PARSED_OPTIONS] = {}
                 cmd_sub_dict[CommandParser.PARSED_KW_OPTIONS] = {}
-                cmd.add_sub_command(sub_cmd)
+                cmd.add_sub_cmd_template(sub_cmd)
                 self.commands[command_name] = cmd_dict
                 return cmd
 

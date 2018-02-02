@@ -15,6 +15,8 @@ class PackageCommands(object):
     LIST = 'list'
     SHOW = 'show'
     LOAD = 'load'
+    DOWNLOAD = 'download'
+    FIND = 'find'
 
     def __init__(self, pkg_manager):
         """TODO: to be defined1. """
@@ -39,7 +41,7 @@ class PackageCommands(object):
         cmd._actions.append(act)
         commands.CommandManager.register_command('Packages', name, cmd)
         self.pkg_mgr_commands_map[name] = cmd
-        self.cmd_parser.add_command('Package', 'Command for managing packages', name, desc, *args, **kwargs)
+        self.cmd_parser.add_cmd_template('Package', 'Command for managing packages', name, desc, *args, **kwargs)
 
     def load_packages_command(self, *args, **kwargs):
         """TODO: Docstring for load_packages_command.
@@ -48,12 +50,18 @@ class PackageCommands(object):
         cmd = self.cmd_parser.parse('Package', PackageCommands.LOAD, *args, **kwargs)
         #Case1: when --all option passed to the cmd
         if len(cmd.parsed_options) > 0:
-                if cmd.parsed_options.__contains__('--all'):
-                        self.package_manager.load_packages()
+            if cmd.parsed_options.__contains__('--all'):
+                self.package_manager.load_packages()
+                return 'SUCCESS'
+            else:
+                return cmd.parsed_cmd.error_missing_options()
         #Case2: when no opt passed,only pkg-names passed
         if len(cmd.parsed_values) > 0:
-                for pkg in cmd.parsed_values:
-                        self.package_manager.load_package(pkg)
+            for pkg in cmd.parsed_values:
+                self.package_manager.load_package(pkg)
+            return 'SUCCESS'
+        else:
+            return cmd.parsed_cmd.error_missing_arguments()
 
     def install_packages_command(self, *args, **kwargs):
         """TODO: Docstring for install_packages_command.
@@ -110,3 +118,27 @@ class PackageCommands(object):
         if len(cmd.parsed_values) > 0:
                 for pkg in cmd.parsed_values:
                         self.package_manager.deactivate_package(pkg)
+
+    def list_packages_command(self, *args, **kwargs):
+        """TODO: Docstring for list_packages_command.
+
+        :*arg: TODO
+        :returns: TODO
+
+        """
+        cmd = self.cmd_parser.parse('Package', PackageCommands.LIST, *args, **kwargs)
+        self.package_manager.list_packages()
+
+    def show_package_command(self, *args, **kwargs):
+        """TODO: Docstring for show_package_command.
+
+        :*arg: TODO
+        :returns: TODO
+
+        """
+        cmd = self.cmd_parser.parse('Package', PackageCommands.SHOW, *args, **kwargs)
+        if len(cmd.parsed_values) > 0:
+            if len(cmd.parsed_values) == 1:
+                pkg = cmd.parsed_values[0]
+                self.package_manager.show_package(pkg)
+
