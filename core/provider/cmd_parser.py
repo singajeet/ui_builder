@@ -24,7 +24,6 @@ class CommandTemplate(object):
             for key_opt_name in keyword_opts:
                 self.add_keyword_option(key_opt_name, keyword_opts[key_opt_name])
 
-
     def command_valid_values():
         doc = "The command_valid_values property."
         def fget(self):
@@ -202,7 +201,7 @@ class CommandTemplate(object):
         """TODO: Docstring for error_missing_arguments.
         :returns: TODO
 
-        """ 
+        """
         err = 'Missing required options.\n'\
                 'Valid options list: {0}'.format(self.options)
         if raise_not_found_err:
@@ -257,8 +256,19 @@ class CommandTemplate(object):
         :returns: TODO
 
         """
-        help_msg = '{0}'.format(self.description)
-        help_msg += '{0} <{1}> [{2}]'.format(self.command_name, self.command_valid_values, self.options)
+        help_msg = '{0}\n\n'.format(self.description)
+        help_msg += '{0} <{1}>'.format(self.command_name, self.command_valid_values)
+        if len(self.options) > 0:
+            help_msg += ' [{0}]'.format(self.options)
+        if len(self.keyword_options) > 0:
+            help_msg += ' [{0}]'.format(self.keyword_options)
+        help_msg += '\n\n'
+        if self.is_sub_command == False and len(self.sub_commands) > 0:
+            help_msg += 'Sub Commands: '
+            for sub_cmd in self.sub_commands.keys():
+                help_msg += '{0}, '.format(sub_cmd)
+            help_msg += '\n\n'
+            help_msg += 'For more information on sub-commands, use:\n{0} <Sub-Command> --help'.format(self.command_name)
         return help_msg
 
     def print_help(self):
@@ -275,6 +285,8 @@ class ParsedResult(object):
         """TODO: to be defined1. """
         self.parsed_cmd_name = cmd_name
         self.parsed_cmd = cmd
+        self.is_help_requested = True if len(cmd[CommandParser.PARSED_OPTIONS]) > 0 and cmd[CommandParser.PARSED_OPTIONS].__contains__('--help') else False
+        self.help_message = cmd.get_help()
         self.parsed_values = cmd[CommandParser.PARSED_CMD_VALUES]
         self.parsed_options = cmd[CommandParser.PARSED_OPTIONS]
         self.parsed_kw_options = cmd[CommandParser.PARSED_KW_OPTIONS]
@@ -379,34 +391,34 @@ class CommandParser(object):
                                     cmd_dict[CommandParser.PARSED_OPTIONS][arg] = True
                                     continue
                                 else:
-                                    return self.return_or_raise(arg=arg)
+                                    return cmd.error_invalid_options()
                             if next_val.startswith('--') == False:
                                 opt_val = args.pop(0)
                                 if cmd.is_valid_option(arg, opt_val):
                                     cmd_dict[CommandParser.PARSED_OPTIONS][arg] = opt_val
                                 else:
-                                    return self.return_or_raise(msg='Invalid value provided for option {0}'.format(arg), arg=opt_val)
+                                    return cmd.error_invalid_options()
                             else:
                                 if cmd.is_valid_option(arg, True):
                                     cmd_dict[CommandParser.PARSED_OPTIONS][arg] = True
                                 else:
-                                    return self.return_or_raise(arg=arg)
+                                    return cmd.error_invalid_option()
                         else:
                             if cmd.is_valid_value(arg):
                                 cmd_dict[CommandParser.PARSED_CMD_VALUES].append(arg)
                             else:
-                                return self.return_or_raise(arg=arg)
+                                return cmd.error_invalid_arguments()
                 if len(kwargs) > 0:
                     for kwarg in kwargs:
                         val = kwargs[kwarg]
                         if cmd.is_valid_kw_option(kwarg, val):
                             cmd_dict[CommandParser.PARSED_KW_OPTIONS][kwarg] = val
                         else:
-                            return self.return_or_raise(msg='Either key is invalid or value for key [{0}] is not valid'.format(kwarg), arg=val)
+                            return cmd.error_invalid_kw_options()
             else:
-                return self.return_or_raise(msg='Command not found', arg=command)
+                raise Exception('Command not found...{0}'.format(cmd.command_name))
         else:
-            return self.return_or_raise(msg='Command can''t be empty')
+            raise Exception('Really??.... An empty command!')
         if sub_command is None:
             result = ParsedResult(command, self.commands[command])
             return result

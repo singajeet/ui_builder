@@ -52,6 +52,9 @@ class PackageCommands(object):
         :returns: TODO
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.LOAD, *args, **kwargs)
+        #if help is requested
+        if cmd.is_help_requested:
+            return cmd.help_message
         #Case1: when --all option passed to the cmd
         if len(cmd.parsed_options) > 0:
             if cmd.parsed_options.__contains__('--all'):
@@ -75,6 +78,9 @@ class PackageCommands(object):
         :returns: TODO
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.INSTALL, *args, **kwargs)
+        #if help is requested
+        if cmd.is_help_requested:
+            return cmd.help_message
         #Case1: when --all option passed to the cmd
         if len(cmd.parsed_options) > 0:
             if cmd.parsed_options.__contains__('--all'):
@@ -98,6 +104,9 @@ class PackageCommands(object):
         :returns: TODO
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.UNINSTALL, *args, **kwargs)
+        #if help is requested
+        if cmd.is_help_requested:
+            return cmd.help_message
         #Case1: when no opt passed,only pkg-names passed
         if len(cmd.parsed_values) > 0:
             for pkg in cmd.parsed_values:
@@ -111,6 +120,9 @@ class PackageCommands(object):
         :returns: TODO
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.ACTIVATE, *args, **kwargs)
+        #if help is requested
+        if cmd.is_help_requested:
+            return cmd.help_message
         #Case1: when --all option passed to the cmd
         if len(cmd.parsed_options) > 0:
             if cmd.parsed_options.__contains__('--all'):
@@ -134,6 +146,9 @@ class PackageCommands(object):
         :returns: TODO
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.DEACTIVATE, *args, **kwargs)
+        #if help is requested
+        if cmd.is_help_requested:
+            return cmd.help_message
         #Case1: when --all option passed to the cmd
         if len(cmd.parsed_options) > 0:
             if cmd.parsed_options.__contains__('--all'):
@@ -159,6 +174,9 @@ class PackageCommands(object):
 
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.LIST, *args, **kwargs)
+        #if help is requested
+        if cmd.is_help_requested:
+            return cmd.help_message
         return self.package_manager.list_packages()
 
     def show_package_command(self, *args, **kwargs):
@@ -169,6 +187,9 @@ class PackageCommands(object):
 
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.SHOW, *args, **kwargs)
+        #if help is requested
+        if cmd.is_help_requested:
+            return cmd.help_message
         if len(cmd.parsed_values) > 0:
             if len(cmd.parsed_values) == 1:
                 pkg = cmd.parsed_values[0]
@@ -187,6 +208,9 @@ class PackageCommands(object):
         """
         source = None
         cmd = self.cmd_parser.parse('Package', PackageCommands.DOWNLOAD, *args, **kwargs)
+        #if help is requested
+        if cmd.is_help_requested:
+            return cmd.help_message
         if len(cmd.parsed_option) > 0:
             if cmd.parsed_options.__contains__('--source'):
                 source = cmd.parsed_options['--source']
@@ -208,6 +232,9 @@ class PackageCommands(object):
 
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.FIND, *args, **kwargs)
+        #if help is requested
+        if cmd.is_help_requested:
+            return cmd.help_message
         if len(cmd.parsed_values) > 0:
             for pkg in cmd.parsed_values:
                 result = self.package_manager.find_package(pkg)
