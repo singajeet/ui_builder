@@ -1,4 +1,13 @@
-
+"""
+Package Name:
+        cmd_parser.py
+Description:
+        Register commands and parse command arguments for validity and converting to various dict
+Author:
+        Ajeet Singh
+Date:
+        2/3/2018
+"""
 
 class CommandTemplate(object):
 

@@ -2,7 +2,8 @@
 package_commands.py
 Contains commands for performing package related tasks
 """
-from ui_builder.core.provider import commands, cmd_parser
+from ui_builder.core.provider import commands
+from ui_builder.core.parser import cmd_parser
 import service
 
 class PackageCommands(object):
