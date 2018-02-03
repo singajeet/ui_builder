@@ -460,15 +460,20 @@ class PackageManager(object):
         else:
                 raise Exception('Package not found...{0}'.format(pkg_name))
 
-    def download_package(self, pkg_name):
+    def download_package(self, package_name, source_name=None):
         """TODO: Docstring for download_package.
         :pkg_nam: TODO
         :returns: TODO
         """
-        for src_name, src in self.downloader.download_src.iteritems():
-            result = self.downloader.find_package(src_name, pkg_name)
-            if result is not None:
-                return self.downloader.download(src_name, pkg_name)
+        result = None
+        if source_name is None:
+            #search package in all sources
+            for src_name, src in self.downloader.download_src.iteritems():
+                result = self.downloader.find_package(src_name, package_name)
+                if result is not None:
+                    return self.downloader.download(src_name, package_name)
+        else:
+            return self.downloader.download(source_name, package_name)
         return 'NOT_FOUND'
 
     def list_sources(self):
