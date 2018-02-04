@@ -1,6 +1,6 @@
 # coding=utf-8
 #imports ---------------------------------
-from ui_builder.core import utils, init_log
+from ui_builder.core import utils, init_log, constants
 import ConfigParser
 import uuid
 import os
@@ -13,17 +13,6 @@ import inspect
 from tinydb import TinyDB, Query, where
 from package_commands import PackageCommands
 
-#global variables --------------------------
-PACKAGE_DOWNLOADER = ''
-DOWNLOAD_SOURCE_HANDLERS = ''
-PACKAGE_INSTALLER='PackageInstaller'
-PKG_DROP_IN_LOC='package_drop_in_loc'
-PKG_INSTALL_LOC='package_install_loc'
-PKG_OVERWRITE_MODE='pkg_overwrite_mode'
-UI_BUILDER_DB = 'ui_builder_db'
-
-PACKAGE_MANAGER = 'PackageManager'
-COMMAND_BINDINGS = 'key_to_command_bindings'
 
 #init logs ----------------------------
 init_log.config_logs()
@@ -298,8 +287,6 @@ class PackageManager(object):
         self._config = ConfigParser.ConfigParser()
         self._config.read(os.path.join(conf_path,'ui_builder.cfg'))
         self.pkg_install_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_INSTALL_LOC))
-        global UI_BUILDER_DB_PATH
-        UI_BUILDER_DB_PATH = self._config.get(PACKAGE_INSTALLER, UI_BUILDER_DB)
         ###Setup commands
         self.installer = PackageInstaller(conf_path)
         self.commands = PackageCommands(self)
@@ -498,10 +485,6 @@ class PackageManager(object):
 
 class PackageSource(object):
     """Docstring for PackageSource. """
-    HTTP = 'http'
-    FTP = 'ftp'
-    LOCAL_DISK = 'local'
-    DEFAULT = 'default'
 
     def __init__(self):
         """TODO: to be defined1. """
