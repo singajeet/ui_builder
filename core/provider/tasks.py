@@ -18,9 +18,9 @@ from ui_builder.core.provider import id_mgr
 init_log.config_logs()
 logger = logging.getLogger(__name__)
 
-class ThreadController(object):
+class C(object):
 
-    """Contains condition and flag to pause/resume or stop an thread
+    """C => Thread[C]ontroller - Contains condition and flag to pause/resume or stop an thread
 
     Attributes:
         tcond (Condition): An object of :class:`Condition` to notify instance of :class:`Thread`
@@ -33,6 +33,7 @@ class ThreadController(object):
     can_work = True
     lock_coro_queue = threading.Lock()
     lock_results_list = threading.Lock()
+    lock_jobs_list = threading.Lock()
     stop_event = threading.Event()
 
 
@@ -55,23 +56,22 @@ class HybridThread(threading.Thread):
 
         """
         super(HybridThread, self).__init__(name=name, args=args, kwargs=kwargs)
-        self.C = ThreadController()
         self._coroutines = []
         self._results = []
+        self._jobs = []
         self._loop = asyncio.new_event_loop()
         self._scheduler = None
-        threading.Condition()
         logger.info('HybridThread {0} has been init..')
 
     def loop():
-        doc = "The asyncio :attr:`loop` instance created for this thread only. This is a readonly property"
+        doc = "The asyncio :attr:`~loop` instance created for this thread only. This is a readonly property"
         def fget(self):
             return self._loop
         return locals()
     loop = property(**loop())
 
     def coroutines():
-        doc = "All the coroutines registered with this thread. This is a readonly property"
+        doc = "All the :attr:`~coroutines` registered with this thread. This is a readonly property"
         def fget(self):
             return self._coroutines
         return locals()
@@ -84,10 +84,17 @@ class HybridThread(threading.Thread):
         return locals()
     scheduler = property(**scheduler())
 
-    def is_paused():
-        doc = "The is_paused property."
+    def results():
+        doc = "Contains result from all the :attr:`~coroutines` in this thread"
         def fget(self):
-            if not self.C.can_work:
+            return self._results
+        return locals()
+    results = property(**results())
+
+    def is_paused():
+        doc = "The is_paused property returns the status of the thread"
+        def fget(self):
+            if not C.can_work:
                 return True
             else:
                 return False
@@ -96,15 +103,12 @@ class HybridThread(threading.Thread):
 
     def add_coroutine(self, coroutine, *args, **kwargs):
         """Adds a coroutine to queue which will be scheduled and executed by thread's event loop
-
         Args:
             coroutine (:obj:`func`): The coroutine to be added in the queue
             *args: Paramters that needs to be passed to the coroutine
             **kwargs: Keyword parameters for passing it to coroutine
-
         Returns:
             None
-
         Examples:
             The parameters args and kwargs should be passed to this method as shown below:
 
@@ -121,7 +125,7 @@ class HybridThread(threading.Thread):
             I am in coro
         """
         if coroutine is not None:
-            with self.C.lock_coro_queue:
+            with C.lock_coro_queue:
                 _task_details = (coroutine, args, kwargs)
                 self._coroutines.append(_task_details)
                 logger.debug('New coroutine added to thread...{0}'.format(coroutine))
@@ -131,44 +135,41 @@ class HybridThread(threading.Thread):
 
     def scheduler_exception_handler(self, scheduler, context):
         """Handles exception raised by any of the :attr:`coroutines` registered with the :attr:`scheduler`
-
-    Args:
-        scheduler (scheduler): Instance of the scheduler raising the exception
-        context (dict): A dictionary containing following attributes::
-            * :attr:`message`
-            * :attr:`job`
-            * :attr:`exception`
-            * :attr:`source_traceback`
-
-    Returns:
-        None
-
+        Args:
+            scheduler (scheduler): Instance of the scheduler raising the exception
+            context (dict): A dictionary containing following attributes::
+                * :attr:`message`
+                * :attr:`job`
+                * :attr:`exception`
+                * :attr:`source_traceback`
+        Returns:
+            None
         """
         logger.error('Error while scheduling job [{0}]. Please see below details...\nmessage: {1}\nexception:{2}\ntraceback:{3}'.format(context.job, context.message, context.exception, context.source_traceback))
 
     async def schedule_jobs(self):
         """Schedule all coroutines/jobs which are available in the :attr:`~coroutines`
-
         Returns:
             None
-
         """
-        if self._scheduler is None:
+        if self.scheduler is None:
             self._scheduler = await aiojobs.create_scheduler(exception_handler=self.scheduler_exception_handler)
         logger.debug('The job scheduler''s instance created')
         #lock the coro queue while scheduling all coro's to run
-        with self.C.lock_coro_queue:
+        with C.lock_coro_queue:
+            self._jobs = []
             for coro_details in self.coroutines:
                 coro = coro_details[0]
                 args = coro_details[1]
                 kwargs = coro_details[2]
-                with self.C.lock_results_list:
-                    res = await self.scheduler.spawn(coro(*args, **kwargs))
-                    self._results.append(res)
+                with C.lock_jobs_list:
+                    job = await self.scheduler.spawn(coro(*args, **kwargs))
+                    self._jobs.append(job)
         #lock the results list again while waiting for coro's to be finished
-        with self.C.lock_result_list:
-            [await coro.wait() for coro in self._results]
-            await self.scheduler.close()
+        with C.lock_result_list:
+            self._results = [await job.wait() for job in self._jobs]
+        #release the scheduler instance
+        await self.scheduler.close()
         self._scheduler = None
         logger.debug('All coroutines have been finished')
 
@@ -177,20 +178,17 @@ class HybridThread(threading.Thread):
             This method will create a new event :attr:`loop` for this thread,
             schedule all the :attr:`coroutines` to run and waits for the
             completion of the :attr:`coroutines`
-
         Args:
             None
-
         Returns:
             None
-
         """
-        while not self.C.stop_event.isSet():
-            with self.C.tcond:
-                if not self.C.can_work:
+        while not C.stop_event.isSet():
+            with C.tcond:
+                if not C.can_work:
                     logger.debug('Can_Work flag is false, thread will go into pause mode')
-                while not self.C.can_work:
-                    self.C.tcond.wait()
+                while not C.can_work:
+                    C.tcond.wait()
             if self.loop is not None:
                 asyncio.set_event_loop(self.loop)
                 logger.debug('New event loop set for this thread')
@@ -202,7 +200,7 @@ class HybridThread(threading.Thread):
                 self.stop()
                 raise Exception(msg)
             #bring the thread in wait cond
-            self.C.can_work = False
+            C.can_work = False
         #thread signaled to stop through stop_event, so time to come out of run and stop thread
         self.stop()
 
@@ -210,25 +208,28 @@ class HybridThread(threading.Thread):
         """Stop the current thread and it's coroutines
         """
         #raise the stop event
-        self.C.stop_event.set()
+        C.stop_event.set()
         #bring thread out of pause state
-        with self.C.tcond:
-            if not self.C.can_work:
-                self.C.can_work = True
-            self.C.tcond.notify()
+        self.resume()
         #stop the coro's if still active
         if self.scheduler is not None:
             self.scheduler.close()
 
-    def toggle_pause(self):
-        """Toogle the :attr:`C.tcond` property of thread to pause or resume thread
+    def pause(self):
+        """Set the :attr:`C.tcond` property of thread to pause it
         """
-        if self.C.can_work == True:
-            self.C.can_work = False
-            self.C.tcond.notify()
-        else:
-            self.C.can_work = True
-            self.C.tcond.notify()
+        with C.tcond:
+            if C.can_work == True:
+                C.can_work = False
+            C.tcond.notify()
+
+    def resume(self):
+        """Set the :attr:`C.tcond` property of thread to resume it
+        """
+        with C.tcond:
+            if C.can_work == False:
+                C.can_work = True
+            C.tcond.notify()
 
 class ThreadManager(object):
 
