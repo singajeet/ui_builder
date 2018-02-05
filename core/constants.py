@@ -11,10 +11,12 @@ import configparser
 import os
 
 
-CONF_PATH = '~/'
+CONF_PATH = '.'
 
-_config = ConfigParser.ConfigParser()
-_config.read(os.path.join(CONF_PATH,'ui_builder.cfg'))
+_config = configparser.ConfigParser()
+
+print('Looking for conf file => {0}'.format(os.path.abspath(os.path.join(CONF_PATH, 'ui_builder.cfg'))))
+_config.read(os.path.abspath(os.path.join(CONF_PATH,'ui_builder.cfg')))
 
 #Consts for modules in 'package' lib --------------------------
 PACKAGE_DOWNLOADER = 'PackageDownloader'
