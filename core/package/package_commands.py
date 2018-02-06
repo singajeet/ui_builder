@@ -1,15 +1,23 @@
 """
-package_commands.py
-Contains commands for performing package related tasks
+.. module:: package_commands
+   :platform: Unix, Windows
+   :synopsis: Contains commands for performing package related tasks
+
+.. moduleauthor:: Ajeet Singh <singajeet@gmail.com>
 """
+
+
 from ui_builder.core.provider import commands
 from ui_builder.core.parser import cmd_parser
-import service
+from ui_builder.core.package import service
 
 class PackageCommands(object):
+    """PackageCommands extends the functionality of the Commands available. It supports the various functions of package system through :class:`Commands` interface. These commands can be invoked from Command Line, Gui, etc with help of :class:`CommandManager` """
+    """
+    .. attribute: Command types
+    """
 
-    """Docstring for PackageCommand. """
-    INSTALL = 'install'
+    INSTALL = 'install' #:attr:`Install`
     UNINSTALL = 'uninstall'
     ACTIVATE = 'activate'
     DEACTIVATE = 'deactivate'
@@ -20,12 +28,21 @@ class PackageCommands(object):
     FIND = 'find'
 
     def __init__(self, pkg_manager):
-        """TODO: to be defined1. """
+        """PackageCommands class needs an instance of :class:`PackageManager` to further work with packages in the system
+        Args:
+            package_manager (PackageManager): An instance of :class:`PackageManager`
+        """
         self.package_manager = pkg_manager
         self.pkg_mgr_commands_map = {}
         self.cmd_parser = cmd_parser.CommandParser()
 
     def register_commands(self):
+        """registers all the packages related commands with :class:`PackageManager` and :class:`CommandParser`
+        Args:
+            None
+        Returns:
+            None
+        """
         self.register_command(PackageCommands.INSTALL, 'Install all packages (or specific one) available in package drop location', self.install_packages_command, '--all')
         self.register_command(PackageCommands.UNINSTALL, 'Uninstall specified package from the system', self.uninstall_packages_command)
         self.register_command(PackageCommands.LOAD, 'Load all packages (or specified one) available in the system', self.load_packages_command, '--all')
@@ -37,8 +54,22 @@ class PackageCommands(object):
         self.register_command(PackageCommands.FIND, 'Search the specified package in all configured sources', self.find_package_command)
 
     def register_command(self, name, desc, action, *args, **kwargs):
-        """TODO: Docstring for register_commands.
-        :returns: TODO
+        """Register command with the :class:`CommandManager` and :class:`CommandParser`
+
+        Args:
+            name (str): Name of the command to register
+            desc (str): Description about the xommand
+            action (Action): Instance of :class:`Action` class or any callable object which will be called back by this command
+            args (object): Arguments that needs to be passed to commands callback method
+
+        Kwargs:
+            kwargs (object):Keyword arguments that will be passed to callback object
+
+        Returns:
+            None
+
+        Examples:
+
 
         """
         cmd = commands.Command(name)
@@ -50,7 +81,8 @@ class PackageCommands(object):
 
     def load_packages_command(self, *args, **kwargs):
         """TODO: Docstring for load_packages_command.
-        :returns: TODO
+        Returns:
+            None
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.LOAD, *args, **kwargs)
         #if help is requested
@@ -75,8 +107,15 @@ class PackageCommands(object):
 
     def install_packages_command(self, *args, **kwargs):
         """TODO: Docstring for install_packages_command.
-        :arg1: TODO
-        :returns: TODO
+
+        Args:
+            args (objects): callback parameters
+
+        Kwargs:
+            kwars (object): callback keyword parameters
+
+        Returns:
+            None
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.INSTALL, *args, **kwargs)
         #if help is requested
@@ -101,8 +140,15 @@ class PackageCommands(object):
 
     def uninstall_packages_command(self, *args, **kwargs):
         """TODO: Docstring for install_packages_command.
-        :arg1: TODO
-        :returns: TODO
+
+        Args:
+            args (objects): callback parameters
+
+        Kwargs:
+            kwars (object): callback keyword parameters
+
+        Returns:
+            None
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.UNINSTALL, *args, **kwargs)
         #if help is requested
@@ -117,8 +163,15 @@ class PackageCommands(object):
             return cmd.parsed_cmd.error_missing_arguments()
     def activate_packages_command(self, *args, **kwargs):
         """TODO: Docstring for activate_packages_command
-        :*arg: TODO
-        :returns: TODO
+
+        Args:
+            args (objects): callback parameters
+
+        Kwargs:
+            kwars (object): callback keyword parameters
+
+        Returns:
+            None
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.ACTIVATE, *args, **kwargs)
         #if help is requested
@@ -143,8 +196,15 @@ class PackageCommands(object):
 
     def deactivate_packages_command(self, *args, **kwargs):
         """TODO: Docstring for deactivate_packages_command
-        :*arg: TODO
-        :returns: TODO
+
+        Args:
+            args (objects): callback parameters
+
+        Kwargs:
+            kwars (object): callback keyword parameters
+
+        Returns:
+            None
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.DEACTIVATE, *args, **kwargs)
         #if help is requested
@@ -170,9 +230,14 @@ class PackageCommands(object):
     def list_packages_command(self, *args, **kwargs):
         """TODO: Docstring for list_packages_command.
 
-        :*arg: TODO
-        :returns: TODO
+        Args:
+            args (objects): callback parameters
 
+        Kwargs:
+            kwars (object): callback keyword parameters
+
+        Returns:
+            None
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.LIST, *args, **kwargs)
         #if help is requested
@@ -181,11 +246,16 @@ class PackageCommands(object):
         return self.package_manager.list_packages()
 
     def show_package_command(self, *args, **kwargs):
-        """TODO: Docstring for show_package_command.
+        """TODO: Docstring for show_package_command
 
-        :*arg: TODO
-        :returns: TODO
+        Args:
+            args (objects): callback parameters
 
+        Kwargs:
+            kwars (object): callback keyword parameters
+
+        Returns:
+            None
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.SHOW, *args, **kwargs)
         #if help is requested
@@ -203,9 +273,14 @@ class PackageCommands(object):
     def download_package_command(self, *args, **kwargs):
         """TODO: Docstring for download_package_command.
 
-        :*arg: TODO''
-        :returns: TODO
+        Args:
+            args (objects): callback parameters
 
+        Kwargs:
+            kwars (object): callback keyword parameters
+
+        Returns:
+            None
         """
         source = None
         cmd = self.cmd_parser.parse('Package', PackageCommands.DOWNLOAD, *args, **kwargs)
@@ -229,8 +304,15 @@ class PackageCommands(object):
 
     def find_package_command(self, *args, **kwargs):
         """TODO: Docstring for find_package_command.
-        :returns: TODO
 
+        Args:
+            args (objects): callback parameters
+
+        Kwargs:
+            kwars (object): callback keyword parameters
+
+        Returns:
+            None
         """
         cmd = self.cmd_parser.parse('Package', PackageCommands.FIND, *args, **kwargs)
         #if help is requested

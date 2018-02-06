@@ -1,8 +1,15 @@
-##
-##
-##
+"""
+.. module:: package_commands
+   :platform: Unix, Windows
+   :synopsis: Contains the functionality to create commands and events. Commands will be managed and executed by single interface i.e., :class:`CommandManager`
+
+.. moduleauthor:: Ajeet Singh <singajeet@gmail.com>
+"""
+
 from configparser import ConfigParser
 from ui_builder.core import constants
+
+
 
 class Action(object):
 

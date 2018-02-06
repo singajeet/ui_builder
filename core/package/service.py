@@ -1,7 +1,15 @@
-# coding=utf-8
+"""
+.. module:: package_commands
+   :platform: Unix, Windows
+   :synopsis: Package management functionality
+
+.. moduleauthor:: Ajeet Singh <singajeet@gmail.com>
+"""
+
+
 #imports ---------------------------------
 from ui_builder.core import utils, init_log, constants
-import ConfigParser
+import configparser
 import uuid
 import os
 import zipfile
@@ -11,7 +19,7 @@ import glob
 import importlib
 import inspect
 from tinydb import TinyDB, Query, where
-from package_commands import PackageCommands
+from ui_builder.core.package import package_commands
 
 
 #init logs ----------------------------
@@ -289,7 +297,7 @@ class PackageManager(object):
         self.pkg_install_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_INSTALL_LOC))
         ###Setup commands
         self.installer = PackageInstaller(conf_path)
-        self.commands = PackageCommands(self)
+        self.commands = package_commands.PackageCommands(self)
         self.commands.register_commands()
         self.downloader = PackageDownloader(conf_path)
         self.archive_mgr = ArchiveManager(conf_path)
@@ -370,8 +378,12 @@ class PackageManager(object):
 
     def uninstall_package(self, package_name):
         """TODO: Docstring for uninstall_package.
-        :package_name: TODO
-        :returns: TODO
+
+        Args:
+            package_name (str): Name of the package that needs to be uninstalled
+
+        Returns:
+            None
         """
         self.installer.uninstall_package(package_name)
 

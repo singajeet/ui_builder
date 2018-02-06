@@ -1,8 +1,12 @@
 """
-Utility functions
+.. module:: utils
+   :platform: Unix, Windows
+   :synopsis: Provides various utility functions and classes
+
+.. moduleauthor:: Ajeet Singh <singajeet@gmail.com>
 """
 from os import path
-import ConfigParser
+import configparser
 
 def validate_file(file):
     """TODO: Docstring for validate_file.
@@ -46,7 +50,7 @@ class FormattedStr(object):
             print(self.formatted_txt)
 
 
-class CheckedConfigParser(ConfigParser.ConfigParser):
+class CheckedConfigParser(configparser.ConfigParser):
     def get_or_none(self, section, option):
         """TODO: Docstring for get_or_none.
 

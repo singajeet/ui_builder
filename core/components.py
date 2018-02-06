@@ -1,6 +1,7 @@
 from jinja2 import BaseLoader,TemplateNotFound,Template,Environment
 import os
-import init_log
+import logging
+from ui_builder.core import init_log
 
 
 init_log.config_logs()

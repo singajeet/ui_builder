@@ -1,11 +1,15 @@
-# Script: models.py
-# Author: Ajeet Singh
-from __future__ import with_statement
+"""
+.. module:: models
+   :platform: Unix, Windows
+   :synopsis: Basic models functionality. All models will inherit from classes available in tgis module
+
+.. moduleauthor:: Ajeet Singh <singajeet@gmail.com>
+"""
 import uuid
 from os import path
 from os import linesep
-import ConfigParser
-from .. import utils
+import configparser
+from ui_builder.core import utils
 
 class Visibility:
     VISIBLE = 0

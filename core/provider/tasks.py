@@ -1,7 +1,7 @@
 """
-..  module:: tasks
-    :platform: Unix, Windows
-    :synopsis: Threads & Async provider lib
+.. module:: tasks
+   :platform: Unix, Windows
+   :synopsis: Threads & Async provider lib
 
 .. moduleauthor:: Ajeet Singh <singajeet@gmail.com>
 """
@@ -13,21 +13,21 @@ from ui_builder.core import constants, init_log
 from ui_builder.core.provider import id_mgr
 
 
-
 #init logs ----------------------------
 init_log.config_logs()
 logger = logging.getLogger(__name__)
 
 class C(object):
 
-    """C => Thread[C]ontroller - Contains condition and flag to pause/resume or stop an thread
+    """
+    C => Thread[C]ontroller - Contains condition and flag to pause/resume or stop an thread
 
     Attributes:
-        tcond (Condition): An object of :class:`Condition` to notify instance of :class:`Thread`
-        can_work (bool): Determines whether an thread can execute or should wait for the notification
-        lock_coro_queue (Lock): An object of :class:`Lock` to lock coroutine queues while adding/removing coroutines from queue
-        lock_result_list (Lock): Used to lock the shared **results** list of an thread
-        stop_event (Event): Stop event should be raised to stop an thread
+        tcond (Condition): An object of :class:`Condition` to notify instance of :class:`Thread`.
+        can_work (bool): Determines whether an thread can execute or should wait for the notification.
+        lock_coro_queue (Lock): An object of :class:`Lock` to lock coroutine queues while adding/removing coroutines from queue.
+        lock_results_list (Lock): Used to lock the shared **results** list of an thread.
+        stop_event (Event): Stop event should be raised to stop an thread.
     """
     tcond = threading.Condition()
     can_work = True
@@ -107,8 +107,10 @@ class HybridThread(threading.Thread):
             coroutine (:obj:`func`): The coroutine to be added in the queue
             *args: Paramters that needs to be passed to the coroutine
             **kwargs: Keyword parameters for passing it to coroutine
+
         Returns:
             None
+
         Examples:
             The parameters args and kwargs should be passed to this method as shown below:
 
@@ -135,22 +137,30 @@ class HybridThread(threading.Thread):
 
     def scheduler_exception_handler(self, scheduler, context):
         """Handles exception raised by any of the :attr:`coroutines` registered with the :attr:`scheduler`
+
         Args:
             scheduler (scheduler): Instance of the scheduler raising the exception
             context (dict): A dictionary containing following attributes::
-                * :attr:`message`
-                * :attr:`job`
-                * :attr:`exception`
-                * :attr:`source_traceback`
+
+                {
+                    message
+                    job
+                    exception
+                    source_traceback
+                }
+
         Returns:
             None
+
         """
         logger.error('Error while scheduling job [{0}]. Please see below details...\nmessage: {1}\nexception:{2}\ntraceback:{3}'.format(context.job, context.message, context.exception, context.source_traceback))
 
     async def schedule_jobs(self):
         """Schedule all coroutines/jobs which are available in the :attr:`~coroutines`
+
         Returns:
             None
+
         """
         if self.scheduler is None:
             self._scheduler = await aiojobs.create_scheduler(exception_handler=self.scheduler_exception_handler)
@@ -166,7 +176,7 @@ class HybridThread(threading.Thread):
                     job = await self.scheduler.spawn(coro(*args, **kwargs))
                     self._jobs.append(job)
         #lock the results list again while waiting for coro's to be finished
-        with C.lock_result_list:
+        #with C.lock_results_list:
             self._results = [await job.wait() for job in self._jobs]
         #release the scheduler instance
         await self.scheduler.close()
@@ -174,14 +184,13 @@ class HybridThread(threading.Thread):
         logger.debug('All coroutines have been finished')
 
     def run(self):
-        """Executes the main :meth:`run` method of the class :class:`Thread`.
-            This method will create a new event :attr:`loop` for this thread,
-            schedule all the :attr:`coroutines` to run and waits for the
-            completion of the :attr:`coroutines`
+        """Executes the main :meth:`run` method of the class :class:`Thread`. This method will create a new event :attr:`loop` for this thread, schedule all the :attr:`coroutines` to run and waits for the completion of the :attr:`coroutines`
         Args:
             None
+
         Returns:
             None
+
         """
         while not C.stop_event.isSet():
             with C.tcond:

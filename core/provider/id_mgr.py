@@ -1,11 +1,9 @@
 """
-id.py
-Description:
-    Manages UUID/GUID for whole application
-Author:
-    Ajeet Singh
-Date:
-    2/4/2018
+.. module:: id_mgr
+   :platform: Unix, Windows
+   :synopsis: Manages UUID/GUID for whole application
+
+.. moduleauthor:: Ajeet Singh <singajeet@gmail.com>
 """
 import uuid
 import tinydb

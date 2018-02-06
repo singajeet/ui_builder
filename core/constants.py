@@ -1,11 +1,9 @@
 """
 constants.py
 Description:
-    Constant variables definition to be uses application wide
+Constant variables definition to be uses application wide
 Author:
-    Ajeet Singh
-Date:
-    2/4/2018
+Ajeet Singh
 """
 import configparser
 import os

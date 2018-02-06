@@ -1,12 +1,9 @@
 """
-Package Name:
-        cmd_parser.py
-Description:
-        Register commands and parse command arguments for validity and converting to various dict
-Author:
-        Ajeet Singh
-Date:
-        2/3/2018
+.. module:: cmd_parser
+   :platform: Unix, Windows
+   :synopsis: Register commands and parse command arguments for validity and converting to various dict
+
+.. moduleauthor:: Ajeet Singh <singajeet@gmail.com>
 """
 from ui_builder.core import constants
 
