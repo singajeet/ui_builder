@@ -7,7 +7,7 @@ Ajeet Singh
 """
 import configparser
 import os
-
+import enum
 
 CONF_PATH = '.'
 
@@ -60,5 +60,18 @@ PARSED_CMD_VALUES = 'parsed_cmd_values'
 PARSED_OPTIONS = 'parsed_options'
 PARSED_KW_OPTIONS = 'parsed_kw_options'
 
+CONF_FILE_NAME = 'ui_builder.cfg'
 
+MODULE_FILE_POST_FIX = '.py'
 
+#---------------------------------------------
+class ThreadStatus(enum.Enum):
+    INVALID = 0
+    STOPPED = 1
+    RUNNING = 2
+    PAUSED = 4
+    EVENT_LOOP_RUNNING = 8
+    EVENT_LOOP_STOPPED = 16
+    EVENT_LOOP_CLOSED = 32
+    EVENT_LOOP_NO_CORO = 64
+    EVENT_LOOP_INVALID = 128

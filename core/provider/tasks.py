@@ -7,34 +7,14 @@
 """
 import threading
 import asyncio
-import aiojobs
 import logging
 from ui_builder.core import constants, init_log
 from ui_builder.core.provider import id_mgr
-
+from ui_builder.core.constants import ThreadStatus
 
 #init logs ----------------------------
 init_log.config_logs()
 logger = logging.getLogger(__name__)
-
-class C(object):
-
-    """
-    C => Thread[C]ontroller - Contains condition and flag to pause/resume or stop an thread
-
-    Attributes:
-        tcond (Condition): An object of :class:`Condition` to notify instance of :class:`Thread`.
-        can_work (bool): Determines whether an thread can execute or should wait for the notification.
-        lock_coro_queue (Lock): An object of :class:`Lock` to lock coroutine queues while adding/removing coroutines from queue.
-        lock_results_list (Lock): Used to lock the shared **results** list of an thread.
-        stop_event (Event): Stop event should be raised to stop an thread.
-    """
-    tcond = threading.Condition()
-    can_work = True
-    lock_coro_queue = threading.Lock()
-    lock_results_list = threading.Lock()
-    lock_jobs_list = threading.Lock()
-    stop_event = threading.Event()
 
 
 class HybridThread(threading.Thread):
@@ -56,11 +36,15 @@ class HybridThread(threading.Thread):
 
         """
         super(HybridThread, self).__init__(name=name, args=args, kwargs=kwargs)
+        self.can_thread_work = True
+        self.have_coroutines = False
+        self.status = ThreadStatus.STOPPED
+        self.stop_thread = threading.Event()
+        self.resume_thread = threading.Event()
         self._coroutines = []
         self._results = []
         self._jobs = []
         self._loop = asyncio.new_event_loop()
-        self._scheduler = None
         logger.info('HybridThread {0} has been init..')
 
     def loop():
@@ -76,13 +60,6 @@ class HybridThread(threading.Thread):
             return self._coroutines
         return locals()
     coroutines = property(**coroutines())
-
-    def scheduler():
-        doc = "An :mod:`aiojobs`.:class:`Scheduler` instance to schedule coroutines"
-        def fget(self):
-            return self._scheduler
-        return locals()
-    scheduler = property(**scheduler())
 
     def results():
         doc = "Contains result from all the :attr:`~coroutines` in this thread"
@@ -126,14 +103,16 @@ class HybridThread(threading.Thread):
             >>> thread_instance.start(); thread_instance.join()
             I am in coro
         """
-        if coroutine is not None:
-            with C.lock_coro_queue:
+        if self.status != ThreadStatus.INVALID:
+            if coroutine is not None:
                 _task_details = (coroutine, args, kwargs)
                 self._coroutines.append(_task_details)
                 logger.debug('New coroutine added to thread...{0}'.format(coroutine))
+            else:
+                logger.error('Invalid reference to the coroutine provided')
+                raise ValueError('Invalid reference to the coroutine provided')
         else:
-            logger.error('Invalid reference to the coroutine provided')
-            raise ValueError('Invalid reference to the coroutine provided')
+            logger.error('Thread is in invalid state, can''t add more coroutines')
 
     def scheduler_exception_handler(self, scheduler, context):
         """Handles exception raised by any of the :attr:`coroutines` registered with the :attr:`scheduler`
@@ -177,10 +156,10 @@ class HybridThread(threading.Thread):
                     self._jobs.append(job)
         #lock the results list again while waiting for coro's to be finished
         #with C.lock_results_list:
-            self._results = [await job.wait() for job in self._jobs]
+            #self._results = [await job.wait() for job in self._jobs]
         #release the scheduler instance
-        await self.scheduler.close()
-        self._scheduler = None
+        #await self.scheduler.close()
+        #self._scheduler = None
         logger.debug('All coroutines have been finished')
 
     def run(self):
@@ -192,53 +171,25 @@ class HybridThread(threading.Thread):
             None
 
         """
-        while not C.stop_event.isSet():
-            with C.tcond:
-                if not C.can_work:
-                    logger.debug('Can_Work flag is false, thread will go into pause mode')
-                while not C.can_work:
-                    C.tcond.wait()
-            if self.loop is not None:
+        while not self.stop_thread.isSet():
+            while not self.resume_thread.isSet():
+                self.resume_thread.wait()
+            if self.loop is not None and self.loop.is_running() == False:
                 asyncio.set_event_loop(self.loop)
                 logger.debug('New event loop set for this thread')
-                self.loop.run_until_complete(self.schedule_jobs())
+                self.loop.run_forever()
                 logger.debug('"run_until_complete" method finitshed successfully')
             else:
                 msg='No event loop found for this thread - {0}.\nThe thread will be stopped immediately'.format(self.name)
                 logger.error(msg)
-                self.stop()
                 raise Exception(msg)
-            #bring the thread in wait cond
-            C.can_work = False
-        #thread signaled to stop through stop_event, so time to come out of run and stop thread
-        self.stop()
 
     def stop(self):
         """Stop the current thread and it's coroutines
         """
-        #raise the stop event
-        C.stop_event.set()
-        #bring thread out of pause state
-        self.resume()
-        #stop the coro's if still active
-        if self.scheduler is not None:
-            self.scheduler.close()
+        if self.loop is not None:
+            self.loop.stop()
 
-    def pause(self):
-        """Set the :attr:`C.tcond` property of thread to pause it
-        """
-        with C.tcond:
-            if C.can_work == True:
-                C.can_work = False
-            C.tcond.notify()
-
-    def resume(self):
-        """Set the :attr:`C.tcond` property of thread to resume it
-        """
-        with C.tcond:
-            if C.can_work == False:
-                C.can_work = True
-            C.tcond.notify()
 
 class ThreadManager(object):
 

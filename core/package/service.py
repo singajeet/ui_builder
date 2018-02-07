@@ -18,6 +18,7 @@ import shutil
 import glob
 import importlib
 import inspect
+import asyncio
 from tinydb import TinyDB, Query, where
 from ui_builder.core.package import package_commands
 
@@ -512,7 +513,7 @@ class PackageSource(object):
         """
         pass
 
-    def download(self, pkg, to):
+    async def download(self, pkg, to):
         """TODO: Docstring for download.
 
         :to: TODO
@@ -521,7 +522,7 @@ class PackageSource(object):
         """
         return 'SUCCESS'
 
-    def list(self):
+    async def list(self):
         """TODO: Docstring for list.
         :returns: TODO
 
@@ -537,7 +538,7 @@ class PackageSource(object):
         """
         pass
 
-    def find_package(self, package_name):
+    async def find_package(self, package_name):
         """TODO: Docstring for find_package.
 
         :package_name: TODO
@@ -551,10 +552,10 @@ class PackageDownloader(object):
 
     def __init__(self, conf_path):
         """TODO: to be defined1. """
-        self.config = ConfigParser.ConfigParser()
-        self.config.read(os.path.join(conf_path, 'ui_builder.cfg'))
-        self.download_src_modules_paths = self.config.get(PACKAGE_DOWNLOADER, DOWNLOAD_SOURCE_HANDLERS)
-        self.pkg_drop_in_loc = os.path.abspath(self.config.get(PACKAGE_INSTALLER, PKG_DROP_IN_LOC))
+        self.config = configparser.ConfigParser()
+        self.config.read(os.path.join(conf_path, constants.CONF_FILE_NAME))
+        self.download_src_modules_paths = self.config.get(constants.PACKAGE_DOWNLOADER, constants.DOWNLOAD_SOURCE_HANDLERS)
+        self.pkg_drop_in_loc = os.path.abspath(self.config.get(constants.PACKAGE_INSTALLER, constants.PKG_DROP_IN_LOC))
         self.download_src = {}
         for src in self.download_src_modules_paths:
             if os.path.exists(src):
@@ -562,8 +563,8 @@ class PackageDownloader(object):
                 if module_files is not None:
                     for mod_file in module_files:
                         if os.path.isfile(os.path.join(src, mod_file)):
-                            if mod_file.endswith('.py'):
-                                module_name = mod_file.rstrip('.py')
+                            if mod_file.endswith(constants.MODULE_FILE_POST_FIX):
+                                module_name = mod_file.rstrip(constants.MODULE_FILE_POST_FIX)
                                 module = importlib.import_module(module_name)
                                 for member in dir(module):
                                     obj = getattr(module, member)
@@ -580,7 +581,7 @@ class PackageDownloader(object):
         if self.download_src.__contains__(src_name):
             downloader_class = self.download_src[src_name]
             downloader = downloader_class()
-            return downloader.download(package_naame, self.pkg_drop_in_loc)
+            return downloader.download(package_name, self.pkg_drop_in_loc)
         else:
             raise Exception('No such download source is configured...{0}'.format(src_name))
 
@@ -591,15 +592,16 @@ class PackageDownloader(object):
         """
         return self.download_src.keys if self.download_src is not None else []
 
-    def list_packages(self):
+    async def list_packages(self):
         """TODO: Docstring for list_packages.
         :returns: TODO
 
         """
-        packages = {}
+        packages = []
         if self.download_src is not None and len(self.download_src) > 0:
-            for src_name, src in self.download_src.iteritems():
-                packages[src_name] = src.list()
+            packages = [src.list() for src in self.download_src.values()]
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(asyncio.gather(packages))
 
         return packages
 
