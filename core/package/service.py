@@ -689,8 +689,12 @@ class PackageInstaller(object):
 
     def uninstall_package(self, package_name):
         """TODO: Docstring for uninstall_packages.
-        :*arg: TODO
-        :returns: TODO
+
+        Args:
+            package_name (str): Name of package that needs to be uninstalled
+
+        Returns:
+            None
         """
         db = TinyDB(UI_BUILDER_DB_PATH)
         q = Query()
