@@ -25,7 +25,19 @@ class HybridThread(threading.Thread):
        coroutine queue and start executing same once an coroutine is added to queue.
     """
 
-    def __init__(self, name=None, args=(), kwargs={}):
+    """
+    .. attribute: Loop Types
+    """
+    THREAD_LOOP = 0
+    EVENT_LOOP = 1
+
+    """
+    .. attribute: Callable Types
+    """
+    FUNCTIONS = 0
+    COROUTINES = 1
+
+    def __init__(self, name=None, notify_on_done=None, args=(), kwargs={}):
         """HybridThread constructor takes name, args and kwargs parameters.
         The args and kwargs will be used internally by this thread and will be
             passed to the :func:`run` function
@@ -45,8 +57,13 @@ class HybridThread(threading.Thread):
         self._block_function_addition = threading.RLock()
         self._coroutines_q = []
         self._coro_results = []
+        self._coro_futures = []
         self._functions_q = []
         self._function_results = []
+        self._function_futures = []
+        self._notify_on_done = notify_on_done
+        self._coroutine_counter = 0
+        self._function_counter = 0
         self._loop = asyncio.new_event_loop()
         logger.info('HybridThread {0} has been init..')
 
@@ -114,9 +131,9 @@ class HybridThread(threading.Thread):
             >>> thread_instance.start_forever() #; thread_instance.join() #join() if required
             I am in coro
         """
-        self._block_coroutine_addition.acquire() 
+        self._block_coroutine_addition.acquire()
         if coroutine is not None:
-            _task_details = (coroutine, *args, **kwargs)
+            _task_details = (coroutine, *args, kwargs)
             self._coroutines_q.append(_task_details)
             logger.debug('New coroutine added to thread...{0}'.format(coroutine))
         else:
@@ -148,7 +165,7 @@ class HybridThread(threading.Thread):
         """
         self._block_function_addition.acquire()
         if function_def is not None:
-            _func_details = (function_def, *args, **kwargs)
+            _func_details = (function_def, *args, kwargs)
             self._functions_q.append(_func_details)
             logger.debug('Function added to thread...{0}'.format(function))
         else:
@@ -157,9 +174,9 @@ class HybridThread(threading.Thread):
         self._block_function_addition.release()
 
     def start(self):
-        """Overwrite the :meth:`start` method so that it can be called from :class:`HybridThread` only.
+        """Overwritten :meth:`start` method! Can be called internally only by this class members.
         If called by another class, method or thread, :exc:`RuntimeError` will be thrown.
-            Use :meth:`start_forever` method to start this thread
+        Use :meth:`start_forever` method to start this thread
         """
         if self._is_internal_call:
             self._is_internal_call = False
@@ -178,17 +195,37 @@ class HybridThread(threading.Thread):
         else:
             raise Exception('Thread is not alive and will not start again')
 
+    def _coroutine_done_cb(self, future):
+        """Coroutine done callback will be called execution of coro finishes.
+            An instance of furure will be passed to this method
+        """
+        if self._coro_results is not None:
+            self._coro_results.append(future.result())
+            self._coroutine_counter += 1
+        if len(self._coroutines_q) == self._coroutine_counter:
+            self._notify_on_done(self._coro_results, HybridThread.COROUTINES)
+
+    def _function_done_cb(self, future):
+        """Function done callback will be called execution of func finishes.
+            An instance of furure will be passed to this method
+        """
+        if self._function_results is not None:
+            self._function_results.append(future.result())
+            self._function_counter += 1
+        if len(self._functions_q) == self._function_counter:
+            self._notify_on_done(self._function_results, HybridThread.FUNCTIONS)
+
     def run(self):
-        """ Executes the main :meth:`run` method of the class :class:`Thread`. 
-            This method will create a new event :attr:`loop` for this thread, 
-            and will run it forever. To stop the event loop and thread, 
+        """ Executes the main :meth:`run` method of the class :class:`Thread`.
+            This method will create a new event :attr:`loop` for this thread,
+            and will run it forever. To stop the event loop and thread,
             :meth:`stop` needs to be called
 
         Note:
             This method contains a loop that will run until :meth:`stop` is called.
             The loop will start the event loop if its not running and will go to
             waiting state while the event loop is running. In case event loop is
-            stopped for any reason, the event loop can be started using 
+            stopped for any reason, the event loop can be started using
             :meth:`schedule_again`. Calling :meth:`stop` will stop the event loop
             and thread and can''t be started again
         """
@@ -200,7 +237,8 @@ class HybridThread(threading.Thread):
                 asyncio.set_event_loop(self.loop)
                 logger.debug('New event loop set for this thread')
                 self.loop.run_forever()
-            #pause main thread as event loop is already running
+            #event loop is stopped at this point but don't quit from thread 
+            #as we may want to start the event loop again
             self._pause_thread.set()
             if self._pause_thread.isSet():
                 self._pause_thread.wait()
@@ -210,34 +248,49 @@ class HybridThread(threading.Thread):
         """
         if self.loop is None:
             raise Exception('Loop is in invalid state')
-        
         if len(self._coroutines_q) > 0:
             #run all coroutines
             for coro in self._coroutines_q:
-                asyncio.run_coroutine_threadsafe(coro[0](coro[1], coro[2]), self.loop)
-        
+                future = asyncio.run_coroutine_threadsafe(coro[0](coro[1], **coro[2]), self.loop)
+                future.add_done_callback(self._coroutine_done_cb)
+                self._coro_futures.append(future)
         if len(self._functions_q) > 0:
             #run all functions
             for func in self._functions_q:
-                self.loop.call_soon_threadsafe(func[0](func[1], func[2]))
+                future = self.loop.call_soon_threadsafe(func[0](func[1], **func[2]))
+                future.add_done_callback(self._function_done_cb)
+                self._function_futures.append(future)
 
     def schedule_again(self):
         if not self.loop.is_running():
             self._pause_thread.clear()
         self._schedule()
 
-    async def fake_call(self):
+    async def _fake_call(self):
         logger.debug("Called fake call")
 
-    def stop(self):
+    def stop(self, loop_type=HybridThread.THREAD_LOOP):
         """Stop the current thread and it's coroutines
         """
-        if self.isAlive:
-            if self.loop.is_running():
-                self.loop.stop()
-                asyncio.run_coroutine_threadsafe(fake_call(), self.loop)
-            if self._is_thread_running:
-                self._stop_thread.set()
+        if loop_type == HybridThread.EVENT_LOOP:
+            self._stop_event_loop()
+        else:
+            self._stop_event_loop()
+            self._stop_thread_loop()
+
+    def _stop_thread_loop(self):
+        """Stop the main thread loop
+        """
+        if self.isAlive and self.is_thread_running:
+            self._is_thread_running = False
+            self._stop_thread.set()
+
+    def _stop_event_loop(self):
+        """Stop the event loop if it is running
+        """
+        if self.loop.is_running():
+            self.loop.stop()
+            asyncio.run_coroutine_threadsafe(_fake_call(), self.loop)
 
 class ThreadManager(object):
 
