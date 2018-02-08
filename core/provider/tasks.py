@@ -36,15 +36,22 @@ class HybridThread(threading.Thread):
 
         """
         super(HybridThread, self).__init__(name=name, args=args, kwargs=kwargs)
-        self.can_thread_work = True
-        self.have_coroutines = False
-        self.status = ThreadStatus.STOPPED
-        self.stop_thread = threading.Event()
-        self.resume_thread = threading.Event()
-        self._coroutines = []
-        self._results = []
+        self._is_thread_running = False
+        self._start_loop = threading.Event()
+        self._stop_thread = threading.Event()
+        self._pause_thread = threading.Event()
+        self._block_coroutine_addition = threading.RLock()
+        self._block_function_addition = threading.RLock()
+        self._coroutines_q = []
+        self._coro_results = []
+        self._functions_q = []
+        self._function_results = []
         self._jobs = []
         self._loop = asyncio.new_event_loop()
+        #thread will be in pause status initially and will resume
+        #once coroutines or function are added and start_forever() is
+        #called
+        self._pause_thread.set()
         logger.info('HybridThread {0} has been init..')
 
     def loop():
@@ -54,29 +61,40 @@ class HybridThread(threading.Thread):
         return locals()
     loop = property(**loop())
 
+    def functions():
+        doc="List of sync functions that will execute in this thread"
+        def fget(self):
+            return self._functions_q
+        return locals()
+    functions = property(**functions())
+
+    def function_results():
+        doc="Contains result of the sync functions executed in this thread"
+        def fget(self):
+            return self._function_results
+        return locals()
+    function_results = property(**function_results())
+
     def coroutines():
         doc = "All the :attr:`~coroutines` registered with this thread. This is a readonly property"
         def fget(self):
-            return self._coroutines
+            return self._coroutines_q
         return locals()
     coroutines = property(**coroutines())
 
-    def results():
+    def coroutine_results():
         doc = "Contains result from all the :attr:`~coroutines` in this thread"
         def fget(self):
-            return self._results
+            return self._coro_results
         return locals()
     results = property(**results())
 
-    def is_paused():
-        doc = "The is_paused property returns the status of the thread"
+    def is_thread_running():
+        doc = "The is_thread_running property."
         def fget(self):
-            if not C.can_work:
-                return True
-            else:
-                return False
+            return self._is_thread_running
         return locals()
-    is_paused = property(**is_paused())
+    is_thread_running = property(**is_thread_running())
 
     def add_coroutine(self, coroutine, *args, **kwargs):
         """Adds a coroutine to queue which will be scheduled and executed by thread's event loop
@@ -103,64 +121,58 @@ class HybridThread(threading.Thread):
             >>> thread_instance.start(); thread_instance.join()
             I am in coro
         """
-        if self.status != ThreadStatus.INVALID:
-            if coroutine is not None:
-                _task_details = (coroutine, args, kwargs)
-                self._coroutines.append(_task_details)
-                logger.debug('New coroutine added to thread...{0}'.format(coroutine))
-            else:
-                logger.error('Invalid reference to the coroutine provided')
-                raise ValueError('Invalid reference to the coroutine provided')
+        self._block_coroutine_addition.acquire() 
+        if coroutine is not None:
+            _task_details = (coroutine, args, kwargs)
+            self._coroutines_q.append(_task_details)
+            logger.debug('New coroutine added to thread...{0}'.format(coroutine))
         else:
-            logger.error('Thread is in invalid state, can''t add more coroutines')
+            logger.error('Invalid reference to the coroutine provided')
+            raise ValueError('Invalid reference to the coroutine provided')
+        self._block_coroutine_addition.release()
 
-    def scheduler_exception_handler(self, scheduler, context):
-        """Handles exception raised by any of the :attr:`coroutines` registered with the :attr:`scheduler`
-
+    def add_function(self, function_def, *args, **kwargs):
+        """Adds a function to queue which will be scheduled and executed by thread's event loop
         Args:
-            scheduler (scheduler): Instance of the scheduler raising the exception
-            context (dict): A dictionary containing following attributes::
-
-                {
-                    message
-                    job
-                    exception
-                    source_traceback
-                }
+            function_def (:obj:`func`): The function definition to be added in the queue
+            *args: Paramters that needs to be passed to the function
+            **kwargs: Keyword parameters for passing it to function
 
         Returns:
             None
 
         """
-        logger.error('Error while scheduling job [{0}]. Please see below details...\nmessage: {1}\nexception:{2}\ntraceback:{3}'.format(context.job, context.message, context.exception, context.source_traceback))
+        self._block_function_addition.acquire()
+        if function_def is not None:
+            _func_details = (function_def, args, kwargs)
+            self._functions_q.append(_func_details)
+            logger.debug('Function added to thread...{0}'.format(function))
+        else:
+            logger.debug('Not a valid function definition')
+            raise ValueError('Not a valid function definition')
+        self._block_function_addition.release()
 
-    async def schedule_jobs(self):
-        """Schedule all coroutines/jobs which are available in the :attr:`~coroutines`
+    def start_forever(self):
+        """Starts the thread, executes the coroutines and sync functions registered with this thread
+        
+        Args:
+            None
 
         Returns:
             None
 
         """
-        if self.scheduler is None:
-            self._scheduler = await aiojobs.create_scheduler(exception_handler=self.scheduler_exception_handler)
-        logger.debug('The job scheduler''s instance created')
-        #lock the coro queue while scheduling all coro's to run
-        with C.lock_coro_queue:
-            self._jobs = []
-            for coro_details in self.coroutines:
-                coro = coro_details[0]
-                args = coro_details[1]
-                kwargs = coro_details[2]
-                with C.lock_jobs_list:
-                    job = await self.scheduler.spawn(coro(*args, **kwargs))
-                    self._jobs.append(job)
-        #lock the results list again while waiting for coro's to be finished
-        #with C.lock_results_list:
-            #self._results = [await job.wait() for job in self._jobs]
-        #release the scheduler instance
-        #await self.scheduler.close()
-        #self._scheduler = None
-        logger.debug('All coroutines have been finished')
+        if self.isAlive:
+            
+            if len(self._coroutines_q) > 0 or len(self._functions_q) > 0:
+                self._resume_main_thread()
+            else:
+                raise Exception('No coroutines or functions available to run')
+
+            if self._is_thread_running == False:
+                super(HybridThread, self).start()
+        else:
+            raise Exception('Thread is not alive and will not start again')
 
     def run(self):
         """Executes the main :meth:`run` method of the class :class:`Thread`. This method will create a new event :attr:`loop` for this thread, schedule all the :attr:`coroutines` to run and waits for the completion of the :attr:`coroutines`
@@ -171,25 +183,62 @@ class HybridThread(threading.Thread):
             None
 
         """
-        while not self.stop_thread.isSet():
-            while not self.resume_thread.isSet():
-                self.resume_thread.wait()
-            if self.loop is not None and self.loop.is_running() == False:
-                asyncio.set_event_loop(self.loop)
-                logger.debug('New event loop set for this thread')
-                self.loop.run_forever()
-                logger.debug('"run_until_complete" method finitshed successfully')
-            else:
-                msg='No event loop found for this thread - {0}.\nThe thread will be stopped immediately'.format(self.name)
-                logger.error(msg)
-                raise Exception(msg)
+        self._is_thread_running = True
+        while not self._stop_thread.isSet():
+        if len(self._coroutines_q) > 0 or len(self._functions_q) > 0:
+            self._run_coro_and_func_in_loop()
+            if len(self._coroutines_q) <=0 and len(self._functions_q) <= 0:
+                self._pause_main_thread()
+
+    def _pause_main_thread(self):
+        """TODO: Docstring for _pause_main_thread.
+        :returns: TODO
+
+        """
+        while self._pause_thread.isSet():
+            self._pause_thread.wait()
+
+    def _resume_main_thread(self):
+        """TODO: Docstring for _resume_main_thread.
+        :returns: TODO
+
+        """
+        self._pause_thread.clear()
+
+    def _run_coro_and_func_in_loop(self):
+        if self.loop is not None and self.loop.is_running() == False:
+            asyncio.set_event_loop(self.loop)
+            logger.debug('New event loop set for this thread')
+        elif self.loop is None:
+            raise Exception('Loop is invalid state')
+        elif self.loop.is_running():
+            #do nothing
+            logger.debug('Event loop is already running')
+
+        if len(self._coroutines_q) > 0:
+            coro_list=[]
+            for coro in self._coroutines_q:
+                coro_list.append(coro[0](*coro[1], **coro[2]))
+            self.loop.run_until_complete(asyncio.gather(*coro_list))
+                logger.debug('"run_until_complete" method finished successfully')
+        if len(self._functions_q) > 0:
+                for f in self._functions_q:
+                    func_def = f[0]
+                    args = f[1]
+                    kwargs == f[2]
+                    self.loop.call_soon(func_def(*args, **kwargs))
+                logger.debug('All functions have been called')
+
+        if self.loop.is_running() and not self.loop.is_closed():
+            self.loop.stop()
+            logger.debug('Loop has been stopped after completion of coro and func queues')
 
     def stop(self):
         """Stop the current thread and it's coroutines
         """
-        if self.loop is not None:
-            self.loop.stop()
-
+        if self.isAlive:
+            if self._is_thread_running and not self._stop_thread.isSet():
+                self._stop_thread.set()
 
 class ThreadManager(object):
 
