@@ -49,10 +49,9 @@ class HybridThread(threading.Thread):
 
         """
         super(HybridThread, self).__init__(name=name, args=args, kwargs=kwargs)
-        self._is_thread_running = False
         self._is_internal_call = False
         self._stop_thread = threading.Event()
-        self._pause_thread = threading.Event()
+        self._resume_thread = threading.Event()
         self._block_coroutine_addition = threading.RLock()
         self._block_function_addition = threading.RLock()
         self._coroutines_q = []
@@ -133,7 +132,7 @@ class HybridThread(threading.Thread):
         """
         self._block_coroutine_addition.acquire()
         if coroutine is not None:
-            _task_details = (coroutine, *args, kwargs)
+            _task_details = (coroutine, args, kwargs)
             self._coroutines_q.append(_task_details)
             logger.debug('New coroutine added to thread...{0}'.format(coroutine))
         else:
@@ -165,7 +164,7 @@ class HybridThread(threading.Thread):
         """
         self._block_function_addition.acquire()
         if function_def is not None:
-            _func_details = (function_def, *args, kwargs)
+            _func_details = (function_def, args, kwargs)
             self._functions_q.append(_func_details)
             logger.debug('Function added to thread...{0}'.format(function))
         else:
@@ -181,6 +180,7 @@ class HybridThread(threading.Thread):
         if self._is_internal_call:
             self._is_internal_call = False
             super(HybridThread, self).start()
+            self._schedule()
         else:
             raise RuntimeError('Call to start is not allowed. Please use "start_forever()" for same')
 
@@ -188,10 +188,8 @@ class HybridThread(threading.Thread):
         """Starts the thread, executes the coroutines and sync functions registered with this thread
         """
         if self.isAlive:
-            if not self._is_thread_running:
-                self._is_internal_call = True
-                self.start()
-                self._schedule()
+            self._is_internal_call = True
+            self.start()
         else:
             raise Exception('Thread is not alive and will not start again')
 
@@ -199,20 +197,18 @@ class HybridThread(threading.Thread):
         """Coroutine done callback will be called execution of coro finishes.
             An instance of furure will be passed to this method
         """
-        if self._coro_results is not None:
-            self._coro_results.append(future.result())
-            self._coroutine_counter += 1
+        self._coroutine_counter += 1
         if len(self._coroutines_q) == self._coroutine_counter:
+            self._coro_results = [future.result() for future in self._coro_futures]
             self._notify_on_done(self._coro_results, HybridThread.COROUTINES)
 
     def _function_done_cb(self, future):
         """Function done callback will be called execution of func finishes.
             An instance of furure will be passed to this method
         """
-        if self._function_results is not None:
-            self._function_results.append(future.result())
-            self._function_counter += 1
+        self._function_counter += 1
         if len(self._functions_q) == self._function_counter:
+            self._function_results = [future.result() for future in self._function_futures]
             self._notify_on_done(self._function_results, HybridThread.FUNCTIONS)
 
     def run(self):
@@ -229,19 +225,19 @@ class HybridThread(threading.Thread):
             :meth:`schedule_again`. Calling :meth:`stop` will stop the event loop
             and thread and can''t be started again
         """
-        self._is_thread_running = True
-        #starts the main thread and keep running until :attr:`_stop_thread` event is called
         while not self._stop_thread.isSet():
-            #if event loop is not running, start it forever
+            self._resume_thread.clear() #<--This makes sure, thread will go in wait
+            # if event loop is not running, start it forever
             if not self.loop.is_running():
                 asyncio.set_event_loop(self.loop)
                 logger.debug('New event loop set for this thread')
-                self.loop.run_forever()
-            #event loop is stopped at this point but don't quit from thread 
-            #as we may want to start the event loop again
-            self._pause_thread.set()
-            if self._pause_thread.isSet():
-                self._pause_thread.wait()
+                self.loop.run_forever() #<-- Call blocked until event loop is stopped
+
+            # The blocking call to "loop.run_forever" from previous line has been done,
+            # so we will wait until we get another request to resume and restart the 
+            # event loop
+            if not self._resume_thread.isSet():
+                self._resume_thread.wait()
 
     def _schedule(self):
         """Executes all callable objects (coroutines and functions) available in the queue
@@ -251,46 +247,44 @@ class HybridThread(threading.Thread):
         if len(self._coroutines_q) > 0:
             #run all coroutines
             for coro in self._coroutines_q:
-                future = asyncio.run_coroutine_threadsafe(coro[0](coro[1], **coro[2]), self.loop)
+                future = asyncio.run_coroutine_threadsafe(coro[0](*coro[1], **coro[2]), self.loop)
                 future.add_done_callback(self._coroutine_done_cb)
                 self._coro_futures.append(future)
         if len(self._functions_q) > 0:
             #run all functions
             for func in self._functions_q:
-                future = self.loop.call_soon_threadsafe(func[0](func[1], **func[2]))
+                future = self.loop.call_soon_threadsafe(func[0](*func[1], **func[2]))
                 future.add_done_callback(self._function_done_cb)
                 self._function_futures.append(future)
 
-    def schedule_again(self):
+    def reschedule(self):
+        """Rerun the event loop if its stopped and schedule all callables again to run
+        """
         if not self.loop.is_running():
-            self._pause_thread.clear()
+            self._resume_thread.set()
         self._schedule()
 
     async def _fake_call(self):
         logger.debug("Called fake call")
+        await asyncio.sleep(0.5)
 
-    def stop(self, loop_type=HybridThread.THREAD_LOOP):
-        """Stop the current thread and it's coroutines
-        """
-        if loop_type == HybridThread.EVENT_LOOP:
-            self._stop_event_loop()
-        else:
-            self._stop_event_loop()
-            self._stop_thread_loop()
-
-    def _stop_thread_loop(self):
-        """Stop the main thread loop
-        """
-        if self.isAlive and self.is_thread_running:
-            self._is_thread_running = False
-            self._stop_thread.set()
-
-    def _stop_event_loop(self):
+    def stop_event_loop(self):
         """Stop the event loop if it is running
         """
         if self.loop.is_running():
             self.loop.stop()
-            asyncio.run_coroutine_threadsafe(_fake_call(), self.loop)
+            # Hack to force event loop to complete its last loop by calling an
+            # empty coroutine
+            asyncio.run_coroutine_threadsafe(self._fake_call(), self.loop)
+
+    def stop(self):
+        """Stop the main thread loop
+        """
+        if self.isAlive:
+            self.stop_event_loop()
+            self._stop_thread.set() #<-- it will break the thread's while loop
+            self._resume_thread.set() #<-- make sure the thread loop don''t go into wait
+
 
 class ThreadManager(object):
 
