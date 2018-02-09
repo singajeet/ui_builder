@@ -104,7 +104,7 @@ class HybridThread(threading.Thread):
         def fget(self):
             return self._coro_results
         return locals()
-    results = property(**results())
+    coroutines_results = property(**coroutine_results())
 
     def is_thread_running():
         doc = "The is_thread_running property."
@@ -205,9 +205,9 @@ class HybridThread(threading.Thread):
         self._coroutine_counter += 1
         if self._notify_on_coroutine_done is not None:
             self._notify_on_coroutine_done(future)
-        if len(self._coroutines_q) == self._coroutine_counter:
+        if len(self._coroutines_q) == self._coroutine_counter and self._notify_on_all_done is not None:
             self._coro_results = [future.result() for future in self._coro_futures]
-            self._notify_on_done(self._coro_results, HybridThread.COROUTINES)
+            self._notify_on_all_done(self._coro_results, HybridThread.COROUTINES)
 
     def _function_done_cb(self, future):
         """Function done callback will be called execution of func finishes.
@@ -216,9 +216,9 @@ class HybridThread(threading.Thread):
         self._function_counter += 1
         if self._notify_on_function_done is not None:
             self._notify_on_functon_done(future)
-        if len(self._functions_q) == self._function_counter:
+        if len(self._functions_q) == self._function_counter and self._notify_on_all_done is not None:
             self._function_results = [future.result() for future in self._function_futures]
-            self._notify_on_done(self._function_results, HybridThread.FUNCTIONS)
+            self._notify_on_all_done(self._function_results, HybridThread.FUNCTIONS)
 
     def run(self):
         """ Executes the main :meth:`run` method of the class :class:`Thread`.
