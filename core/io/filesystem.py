@@ -12,12 +12,25 @@ class File(object):
 
     """Represents a file on file system """
 
-    def __init__(self):
+    def __init__(self, file_name, create_if_not_exists=False, base_path=None):
         """TODO: to be defined1. """
-        self._name = None
+        if create_if_not_exists == False:
+            if base_path is None:
+                src_file = pathlib.Path(file_name)
+            else:
+                src_file = pathlib.Path(base_path).joinpath(file_name)
+            if src_file.exists():
+                self._name = src_file.name
+                self._base_path = src_file.parent.absolute()
+                self._content = src_file.read_bytes()
+            else:
+                raise Exception('Invalid file provided')
+        else:
+            self._name = file_name
+            self._base_path = base_path
+
         self._base_name = None
         self._ext = None
-        self._base_path = None
         self._size = 0
         self._content = None
         self._exists = False
@@ -63,7 +76,7 @@ class File(object):
     def size():
         doc = "Size of the file on local file system"
         def fget(self):
-            return self._size
+            return pathlib.os.path.getsize(pathlib.os.path.join(self.base_path, self.name))
         return locals()
     size = property(**size())
 
@@ -92,6 +105,8 @@ class File(object):
             destination (str): The target location where file needs to be copied
             force (bool): If set to True, it will overwrite the file in destination
             create_path (bool): create the destination path if not exists
+        Returns:
+            file_path (pathlib.Path): Returns an instance of :class:`Path` if file copied else None
         """
         dest_path = pathlib.Path(destination)
         if dest_path.exists():
@@ -121,3 +136,15 @@ class File(object):
             return dest_file
         else:
             raise Exception('Invalid destination path')
+
+    def move(self, destination, force=False, create_path=False):
+        """Moves the current file to the destination. Please see :meth:`copy` for more information on arguments
+        """
+        new_file = self.copy(destination, force, create_path)
+        if new_file is not None:
+            if new_file.exists():
+                old_file = pathlib.Path(self.base_path).joinpath(self.name)
+                self.base_path = new_path.parent.absolute()
+                old_file.unlink()
+                return new_file
+        return None
