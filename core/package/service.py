@@ -19,6 +19,7 @@ import glob
 import importlib
 import inspect
 import asyncio
+from goldfinch import validFileName
 from tinydb import TinyDB, Query, where
 from ui_builder.core.package import package_commands
 
@@ -28,10 +29,18 @@ init_log.config_logs()
 logger = logging.getLogger(__name__)
 
 class ComponentInfo(object):
-    """Docstring for Component. """
+    """Represents an component in package management system. A component is an object which can contain logic (in form of code),
+        resources (image, configuration, etc) and other similar objects. :class:`ComponentInfo` class contains the details about
+        an component like, source code, compiled code, templates, version, dependency on other components, etc
+    """
 
     def __init__(self, name, path):
-        """TODO: to be defined1. """
+        """An :class:`ComponentInfo` constructor requires two params -
+
+        Args:
+            name (str): Name of the component
+            base_path (str): A directory location which contains templates, config files, etc
+        """
         self.id = None
         self.name = name
         self.description = None
@@ -49,9 +58,9 @@ class ComponentInfo(object):
         self.component_dependencies = {}
 
     def _load_component_config(self):
-        """TODO: Docstring for load_component.
-        :returns: TODO
-
+        """Loads details of component from local config file.
+            Config filename and component name should match else component will not load
+            This function will be used by the :class:`PackageInstaller` class only
         """
         self.config_file = utils.CheckedConfigParser()
         self.config_file.read(self.config_path)
@@ -70,9 +79,11 @@ class ComponentInfo(object):
         logger.info('Component loaded successfully...{0}'.format(self.name))
 
     def load_details(self, comp_id, db_conn):
-        """TODO: Docstring for load_details.
-        :returns: TODO
+        """Load details of component from database once component has been installed
 
+        Args:
+            comp_id (uuid): A unique :class:`uuid.uuid`id assigned to the component
+            db_conn (object): An open connection to metadata database
         """
         logger.debug('Loading details for component [{0}] from db'.format(comp_id))
         if db_conn is not None:
@@ -90,10 +101,17 @@ class ComponentInfo(object):
             raise Exception(err)
 
 class PackageInfo(object):
-    """Docstring for Package. """
+    """:class:`PackageInfo` class contains information about a package in the Package Managment System
+        A package consist of one or more components grouped logically together. If there is an dependency
+        between components and other packages, same will be defined in this class
+    """
 
     def __init__(self, location=None):
-        """TODO: to be defined1. """
+        """:class:`PackageInfo` class have one required parameter
+
+        Args:
+            location (str): Location of the package on the local file system where package is installed
+        """
         self.id = None
         self.location = location
         self.config_file = None
@@ -112,7 +130,7 @@ class PackageInfo(object):
         self.package_dependencies = {}
 
     def config_file():
-        doc = "The config_file property."
+        doc = "Location and name of config file which will be used during installation of the package"
         def fget(self):
             return self._config_file
         def fset(self, value):
@@ -123,7 +141,7 @@ class PackageInfo(object):
     config_file = property(**config_file())
 
     def location():
-        doc = "The location property."
+        doc = "The location on file system where this package is installed or will be installed"
         def fget(self):
             return self._location
         def fset(self, value):
@@ -134,7 +152,7 @@ class PackageInfo(object):
     location = property(**location())
 
     def is_enabled():
-        doc = "The is_enabled property."
+        doc = "Flag which denotes whether package is in use or not"
         def fget(self):
             return self._is_enabled
         def fset(self, value):
@@ -145,7 +163,7 @@ class PackageInfo(object):
     is_enabled = property(**is_enabled())
 
     def is_installed():
-        doc = "The is_installed property."
+        doc = "As name suggest, this flag tells whether package is installed or not"
         def fget(self):
             return self._is_installed
         def fset(self, value):
@@ -156,9 +174,7 @@ class PackageInfo(object):
     is_installed = property(**is_installed())
 
     def _load_pkg_config(self):
-        """TODO: Will be called by installer only
-        :returns: TODO
-
+        """Loads package details from config file during installation of this package
         """
         logger.debug('Looking for pkg file in...{0}'.format(self.location))
         temp_pkg_files = os.listdir(self.location)
@@ -191,9 +207,7 @@ class PackageInfo(object):
             self._load_child_comp_config()
 
     def _load_child_comp_config(self):
-        """TODO: Docstring for load_components.
-        :returns: TODO
-
+        """Load details about all components which exists in this package
         """
         if self._comp_name_list is None:
             self._load_pkg_config()
@@ -213,11 +227,11 @@ class PackageInfo(object):
             raise Exception(err)
 
     def load_details(self, pkg_id, db_conn):
-        """TODO: Docstring for load_details.
+        """Load details of package from database after the package has been installed in the system
 
-        :arg1: TODO
-        :returns: TODO
-
+        Args:
+            pkg_id (uuid): A unique id assigned to package
+            db_conn (object): An open connection to the metadata database
         """
         logger.debug('Loading details for package...[{0}] from db'.format(pkg_id))
         if db_conn is not None:
@@ -237,9 +251,10 @@ class PackageInfo(object):
             raise Exception('Database connection is invalid while loading pkg details...[{0}]'.format(pkg_id))
 
     def get_comp_name_list(self):
-        """TODO: Docstring for get_comp_name_list.
-        :returns: TODO
+        """Returns a list containing name of all components available in this package
 
+        Returns:
+            comp_name_list ([str]): List of component names available in this package
         """
         if self._comp_name_list is not None:
             return self._comp_name_list
@@ -248,22 +263,26 @@ class PackageInfo(object):
             return self._comp_name_list
 
     def get_components(self):
-        """TODO: Docstring for get_components.
-        :returns: TODO
+        """Returns instances of all components which are part of this package
 
+        Returns:
+            components ([object]): Returns list of components instances
         """
         if self._components is not None:
             return self._components
         else:
             self.load_components()
             return self._components
-
         return None
 
     def get_component(self, comp_name):
-        """TODO: Docstring for get_component.
-        :returns: TODO
+        """Load component based on the name passed as args and return sane
 
+        Args:
+            comp_name (str): Name of the component which needs to be loaded
+
+        Returns:
+            An instance of component if found else None
         """
         if self._comp_name_list is not None:
             return self._components[comp_name]
@@ -271,6 +290,14 @@ class PackageInfo(object):
         return None
 
     def get_component_by_id(self, comp_id):
+        """Same as :meth:`get_component` but loads the component based on id
+
+        Args:
+            comp_id (uuid): The unique id assigned to an component
+
+        Returns:
+            An instance of component or None
+        """
         if self._components is not None and self._comp_name_id_map is not None:
             if self._comp_name_id_map[comp_id] is not None:
                 return self._comp_name_id_map[comp_id]
@@ -281,9 +308,22 @@ class PackageInfo(object):
 
 class PackageManager(object):
     def __init__(self, conf_path):
-        """TODO: Docstring for __init__.
-        :conf_path: TODO
-        :returns: TODO
+        """:class:`PackageManager` is an interface to the package management system and
+            provide functionality (to find, install, load, etc) to manage various kinds of
+            packages in the whole system. This class is a backbone of the whole system and
+            should always have high priority in whole system.
+
+            PackageManager have following core components:
+
+                * :class:`PackageInstaller` - Install the package in system by updating its info in DB
+                * :class:`PackageDownloader` - Downloads the package from relevant source
+                * :class:`ArchiveManager` - Expands the package on local file system during installation 
+                                            & keeps copy of uninstalled archived package in its local cache
+                * :class:`PackageSource` - The source of an package
+                * :class:`PackageIndexManager` - Maintains the index list of all packages (installed & uninstalled both)
+
+        Notes: :class:`PackageManager` will work as a service and should have a dedicated thread
+            for smooth functionality. The thread will be among other threads of high priority
         """
         logger.info('Starting PackageManager...')
         self.packages_map = {}
@@ -301,10 +341,10 @@ class PackageManager(object):
         self.commands = package_commands.PackageCommands(self)
         self.commands.register_commands()
         self.downloader = PackageDownloader(conf_path)
-        self.archive_mgr = ArchiveManager(conf_path)
+        self.archive_manager = ArchiveManager(conf_path)
 
     def packages_name_id_map():
-        doc = "The packages_name_id_map property."
+        doc = "This property provides the mapping of package id to its name for fast lookup"
         def fget(self):
             return self._packages_name_id_map
         def fset(self, value):
@@ -315,7 +355,7 @@ class PackageManager(object):
     packages_name_id_map = property(**packages_name_id_map())
 
     def packages_map():
-        doc = "The packages_map property."
+        doc ="Provides the mapping of package id and its in memory instance for faster loading of packages"
         def fget(self):
             return self._packages_map
         def fset(self, value):
@@ -326,12 +366,22 @@ class PackageManager(object):
     packages_map = property(**packages_map())
 
     def _load_key_command_bindings(self):
+        """Loads the binding details between package manager's commands and associated keys
+            These binding details will be used by the :class:`CommandManager`
+        """
         for key, value in self.key_binding_config.items(PACKAGE_MANAGER):
             self._key_to_command_mapping[key] = value
 
     def load_package(self, pkg_name):
-        """TODO: Docstring for load_package.
-        :returns: TODO
+        """Load package details from the database, create instance of :class:`PackageInfo`
+            and returns the imstance back. It also maintains the instance in in-memory
+            mapping property :attr:`packages_map` for faster lookup
+
+        Args:
+            pkg_name (str): Name of the package to be loaded
+
+        Returns:
+            Instance of :class:`PackageInfo` class or None if not found
         """
         _db = TinyDB(UI_BUILDER_DB_PATH)
         _pkg_table = _db.table('Package_Index')
@@ -341,10 +391,12 @@ class PackageManager(object):
             pkg.load_details(_pkg.id, _db)
             self.packages_name_id_map[_pkg.name]=_pkg.id
             self.packages_map[_pkg.id] = pkg
+            return pkg
+        else:
+            return None
 
     def load_packages(self):
-        """TODO: Docstring for load_packages.
-        :returns: TODO
+        """Load all packages in the in-memory mapping property :attr:`packages_map`
         """
         _db = TinyDB(UI_BUILDER_DB_PATH)
         _package_table = _db.table('Package_Index')
@@ -356,12 +408,22 @@ class PackageManager(object):
             self.packages_map[pkg_record.id] = pkg
         logger.debug('Packages map has been initialized successfully!')
 
-    def install_package(self, file_name):
-        """TODO: Docstring for install_package.
-        :arg1: TODO
-        :returns: TODO
+    def install_package(self, package_name):
+        """Install package on local file system. It will follow the below mentioned workflow for installation-
+            1. Request package from :class:`ArchiveManager`-
+                1.1. If available in archive cache, ArchiveManager will return it for installation
+                1.2. :class:`PackageManager` will forward the package to :class:`PackageInstaller` for further installation
+            2. If not found in cache, the request will be forwarded to :class:`PackageIndexManager` to find the source of package
+                2.1. If found in index, an instance of :class:`PackageSource` and request will be forwarded to :class:`PackageDownloader` to download package from respective source
+                2.2. Once downloaded, request will goto :class:`PackageInstaller` for installation after package unarchived by :class:`ArchiveManager`
+                2.3. After installation, :class:`ArchiveManager` and :class:`PackageManager` will update its respective cache
+            3. If not found in local index, an 'index refresh' request will be generated and process will start again from step '2' (once the index is refreshed)
+
+        Note:
+            Please refer to :class:`PackageIndexManager` for more information on 'PackageIndex' refresh request
         """
-        if self.archive_mgr.is_package_available(file_name):
+        #Step 1 - find package in archive manager and install
+        if self.archive_manager.is_package_available(package_name):
             self.installer.install_package(file_name)
         else:
             status = self.download_package(file_name)
@@ -833,9 +895,10 @@ class ArchiveManager(object):
     def __init__(self, conf_path):
         """TODO: to be defined1. """
         self.id = uuid.uuid4()
-        self._config = ConfigParser.ConfigParser()
+        self._config = configparser.ConfigParser()
         self._config.read(os.path.join(conf_path, 'ui_builder.cfg'))
-        self.archive_drop_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_DROP_IN_LOC))
+        self.archive_drop_location = os.path.abspath(self._config.get(constants.PACKAGE_INSTALLER, constants.PKG_DROP_IN_LOC))
+        self.archive_cache_location = os.path.abspath(self._config.get(constants.PACKAGE_INSTALLER, constants.PKG_DROP_IN_LOC))
         self.archive_file_list  = None
 
     def archive_drop_location():
@@ -860,31 +923,49 @@ class ArchiveManager(object):
         return locals()
     archive_file_list = property(**archive_file_list())
 
-    def load_archive(self, file_name):
-        """TODO: Docstring for load_archive.
-        :returns: TODO
+    def archive_cache_location():
+        doc = "The archive_cache_location contains all the downloaded packes for future installation"
+        def fget(self):
+            return self._archive_cache_location
+        def fset(self, value):
+            self._archive_cache_location = value
+        def fdel(self):
+            del self._archive_cache_location
+        return locals()
+    archive_cache_location = property(**archive_cache_location())
 
+    def get_validated_package_path(self, package_name):
+        """Looks for a package file on local file system, check if it is a valid zip file
+            and return back the path to package file
+
+        Args:
+            package_name (str): This should be the package name and not a package "file" name
+
+        Returns:
+            file_path (str): Absolute path to package file on file system
         """
-        for file in os.listdir(self.archive_drop_location):
-            if file == file_name:
-                file_path = os.path.join(self.archive_drop_location, file)
+        for file_name in os.listdir(self.archive_drop_location):
+            package_name = validFileName('{0}.{1}'.format(package_name, constants.PACKAGE_FILE_EXTENSION))
+            if file_name.upper() == package_name.upper():
+                file_path = os.path.join(self.archive_drop_location, file_name)
                 if os.path.isfile(file_path):
                     try:
                         utils.validate_file(file_path)
                         if zipfile.is_zipfile(file_path):
                             return file_path
                         else:
-                            logger.debug('File is not zipped and is skipped...{0}'.format(file))
+                            return None
                     except Exception as msg:
-                        logger.warn('Invalid file and is skipped...{0}'.format(file))
+                        return None
 
-    def load_archives(self):
-        """TODO: Docstring for load_archives.
-        :returns: TODO
+    def get_validated_package_path_list(self):
+        """Same as :meth:`get_validated_package_path` but returns a list of packages available in :attr:`package_drop_in_location`
 
+        None:
+            file_paths (list): Returns a list of valid package paths from drop in location
         """
         self.archive_file_list = []
-        for file in os.listdir(self.archive_drop_location):
+        for file_name in os.listdir(self.archive_drop_location):
             file_path = os.path.join(self.archive_drop_location, file)
             if os.path.isfile(file_path):
                 try:
@@ -897,23 +978,57 @@ class ArchiveManager(object):
                     logger.warn('Invalid file and is skipped...{0}'.format(file))
             else:
                 logger.debug('Not a file and is skipped...{0}'.format(file))
+        return self.archive_file_list
 
-        return self.archive_file_listi
 
-    def is_package_available(self, pkg_file_name):
-        """TODO: Docstring for is_package_available.
-        :pkg_file_name: TODO
-        :returns: TODO
+    def is_package_available(self, package_name):
+        """Checks whether package exists in package drop location or not
         """
-        if pkg_file_name is not None:
-            if pkg_file_name.endswith('.pkg'):
-                pkg_file = os.path.join(self.archive_drop_location, pkg_file_name)
-            else:
-                pkg_file_name = '{0}.pkg'.format(pkg_file_name)
-                pkg_file = os.path.join(self.archive_drop_location, pkg_file_name)
-            if os.path.exists(pkg_file):
+        if package_name is not None:
+            package_name = '{0}.pkg'.format(validFileName(package_name))
+            package_file = os.path.join(self.archive_drop_location, package_name)
+            if os.path.exists(package_file):
                 return True
-            else:
-                return False
         else:
             return False
+
+    def is_package_available_in_cache(self, package_name):
+        """Checks whether package exists in the archive cache or not
+        """
+        if package_name is not None:
+            package_name = '{0}.pkg'.format(validFileName(package_name))
+            package_file = os.path.join(self.archive_cache_location, package_name)
+            if os.path.exists(package_file):
+                return True
+        else:
+            return False
+
+    def get_validated_package_cache_path(self, package_name):
+        """Looks for a package file on local archive cache, check if it is a valid zip file
+            and return back the path to package file
+
+        Args:
+            package_name (str): This should be the package name and not a package "file" name
+
+        Returns:
+            file_path (str): Absolute path to package file on file system
+        """
+        for file_name in os.listdir(self.archive_cache_location):
+            package_name = validFileName('{0}.{1}'.format(package_name, constants.PACKAGE_FILE_EXTENSION))
+            if file_name.upper() == package_name.upper():
+                file_path = os.path.join(self.archive_cache_location, file_name)
+                if os.path.isfile(file_path):
+                    try:
+                        utils.validate_file(file_path)
+                        if zipfile.is_zipfile(file_path):
+                            return file_path
+                        else:
+                            return None
+                    except Exception as msg:
+                        return None
+
+    def get_package_from_cache(self, package_name):
+        """Find a package in local archive location and return back file object
+        """
+        if self.is_package_available_in_cache(package_name):
+            file_path = self.get_validated_package_cache_path(package_name)

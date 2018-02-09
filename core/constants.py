@@ -22,6 +22,7 @@ DOWNLOAD_SOURCE_HANDLERS = 'download_source_handlers'
 PACKAGE_INSTALLER='PackageInstaller'
 PKG_DROP_IN_LOC='package_drop_in_loc'
 PKG_INSTALL_LOC='package_install_loc'
+PKG_FILE_EXT='package_file_extension'
 PKG_OVERWRITE_MODE='pkg_overwrite_mode'
 UI_BUILDER_DB = 'ui_builder_db'
 PACKAGE_MANAGER = 'PackageManager'
@@ -29,6 +30,7 @@ COMMAND_BINDINGS = 'key_to_command_bindings'
 
 #global UI_BUILDER_DB_PATH
 UI_BUILDER_DB_PATH = _config.get(PACKAGE_INSTALLER, UI_BUILDER_DB)
+PACKAGE_FILE_EXTENSION = _config.get(PACKAGE_INSTALLER, PKG_FILE_EXT)
 #--------------------------------------------
 
 CONFIG_SECTION = 'CommandManager'
