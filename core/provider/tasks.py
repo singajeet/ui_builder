@@ -37,13 +37,16 @@ class HybridThread(threading.Thread):
     FUNCTIONS = 0
     COROUTINES = 1
 
-    def __init__(self, name=None, notify_on_done=None, args=(), kwargs={}):
+    def __init__(self, name=None, notify_on_all_done=None, notify_on_coroutine_done=None, notify_on_function_done=None, args=(), kwargs={}):
         """HybridThread constructor takes name, args and kwargs parameters.
         The args and kwargs will be used internally by this thread and will be
             passed to the :func:`run` function
 
         Args:
             name (str): Name of the thread, usefull if you want to categorize coroutines
+            notify_on_all_done (func): Calls back the :func:`notify_on_all_done` after all coroutines and functions are done. This callback will get 2 params - results of all coroutines or functions and type of callables called - coroutines or functions
+            notify_on_coroutine_done (func): Calls back the :func:`notify_on_coroutine_done` after completion of each coroutine. Future instance will be passed to it as param
+            notify_on_function_done (func): Same as :attr:`notify_on_coroutine_done` but it works for functions only
             *args: Parameters to be passed over to :func:`run` function
             **kwargs: Same as args but accepts only keyword arguments
 
@@ -60,7 +63,9 @@ class HybridThread(threading.Thread):
         self._functions_q = []
         self._function_results = []
         self._function_futures = []
-        self._notify_on_done = notify_on_done
+        self._notify_on_all_done = notify_on_all_done
+        self._notify_on_coroutine_done = notify_on_coroutine_done
+        self._notify_on_function_done = notify_on_function_done
         self._coroutine_counter = 0
         self._function_counter = 0
         self._loop = asyncio.new_event_loop()
@@ -198,6 +203,8 @@ class HybridThread(threading.Thread):
             An instance of furure will be passed to this method
         """
         self._coroutine_counter += 1
+        if self._notify_on_coroutine_done is not None:
+            self._notify_on_coroutine_done(future)
         if len(self._coroutines_q) == self._coroutine_counter:
             self._coro_results = [future.result() for future in self._coro_futures]
             self._notify_on_done(self._coro_results, HybridThread.COROUTINES)
@@ -207,6 +214,8 @@ class HybridThread(threading.Thread):
             An instance of furure will be passed to this method
         """
         self._function_counter += 1
+        if self._notify_on_function_done is not None:
+            self._notify_on_functon_done(future)
         if len(self._functions_q) == self._function_counter:
             self._function_results = [future.result() for future in self._function_futures]
             self._notify_on_done(self._function_results, HybridThread.FUNCTIONS)
@@ -234,7 +243,7 @@ class HybridThread(threading.Thread):
                 self.loop.run_forever() #<-- Call blocked until event loop is stopped
 
             # The blocking call to "loop.run_forever" from previous line has been done,
-            # so we will wait until we get another request to resume and restart the 
+            # so we will wait until we get another request to resume and restart the
             # event loop
             if not self._resume_thread.isSet():
                 self._resume_thread.wait()
