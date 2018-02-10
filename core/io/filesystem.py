@@ -9,6 +9,7 @@ import os
 from goldfinch import validFileName
 import pathlib
 import zipfile
+import io
 
 class File(object):
 
@@ -21,24 +22,32 @@ class File(object):
         self._ext = None
 
         if create_if_not_exists == False:
+            if file_name is None:
+                raise Exception('Filename can''t have blank')
             if base_path is None:
-                src_file = pathlib.Path(file_name)
+                if file_name.find('~') >= 0:
+                    src_file = pathlib.Path(file_name).expanduser()
+                else:
+                    src_file = pathlib.Path(file_name).absolute()
             else:
-                src_file = pathlib.Path(base_path).joinpath(file_name)
+                if base_path.find('~') >= 0:
+                    src_file = pathlib.Path(base_path).expanduser().joinpath(file_name).absolute()
+                else:
+                    src_file = pathlib.Path(base_path).absolute().joinpath(file_name).absolute()
             if src_file.exists():
                 self.name = src_file.name
                 self.base_path = src_file.parent.absolute()
                 self.content = src_file.read_bytes()
-                self.exists = True
-                self.size = src_file.stat().st_size
-                self.path = src_file
+                self._exists = True
+                self._size = src_file.stat().st_size
+                self.path = src_file.absolute()
             else:
                 raise Exception('Invalid file provided')
         else:
             self.name = file_name
             self.base_path = base_path
-            self.exists = False
-            self.size = 0
+            self._exists = False
+            self._size = 0
             self.path = pathlib.Path()
             self.content = None
         self.os = os
@@ -48,7 +57,7 @@ class File(object):
         def fget(self):
             return self._name
         def fset(self, value):
-            self._name = validFileName(value)
+            self._name = validFileName(value, initCap=False).decode() if type(validFileName(value, initCap=False)) != str else validFileName(value, initCap=False)
             self._base_name = value[0:value.rindex('.')]
             self._ext = value[(value.rindex('.')+1):]
         def fdel(self):
@@ -84,7 +93,7 @@ class File(object):
     def size():
         doc = "Size of the file on local file system"
         def fget(self):
-            return pathlib.os.path.getsize(pathlib.os.path.join(self.base_path, self.name))
+            return self._size 
         return locals()
     size = property(**size())
 
@@ -116,7 +125,13 @@ class File(object):
         Returns:
             file_path (pathlib.Path): Returns an instance of :class:`Path` if file copied else None
         """
-        dest_path = pathlib.Path(destination)
+        if destination is not None and destination.find('~') >= 0:
+            dest_path = pathlib.Path(destination).expanduser()
+        elif destination is not None:
+            dest_path = pathlib.Path(destination).absolute()
+        else:
+            raise Exception('Invalid path provided - {0}'.format(dest_path))
+
         if dest_path.exists():
             if dest_path.is_dir():
                 dest_file = dest_path.joinpath(self.name)
@@ -152,7 +167,7 @@ class File(object):
         if new_file is not None:
             if new_file.exists():
                 old_file = pathlib.Path(self.base_path).joinpath(self.name)
-                self.base_path = new_path.parent.absolute()
+                self.base_path = new_file.parent.absolute()
                 old_file.unlink()
                 return new_file
         return None
@@ -168,20 +183,28 @@ class PackageFile(File):
 
     def __init__(self, file_name, create_if_not_exists=False, base_path=None):
         """TODO: to be defined1. """
-        super(PackageFile, self).__init__(self, file_name, create_if_not_exists, base_path)
+        super(PackageFile, self).__init__(file_name, create_if_not_exists, base_path)
         if self.exists:
             if not zipfile.is_zipfile(self.path._str):
                 raise Exception('Not a valid zip file')
 
-    def extract_to(self, dest_path):
+    def extract_to(self, target_path):
         """Extract the contents of package to the specified path
 
         Args:
-            dest_path (str): path to the lication where package needs to be extracted
+            target_path (str): path to the lication where package needs to be extracted
         """
-        if os.path.exists(dest_path):
-            zippedfile = zipfile.ZipFile(self.path._str)
-            zippedfile.extractall(dest_path)
+        if target_path is not None and target_path.find('~') >= 0:
+            dest_path = pathlib.Path(target_path).expanduser()
+        elif target_path is not None:
+            dest_path = pathlib.Path(target_path).absolute()
+        else:
+            raise Exception('Can''t accept blank for destination path')
+        if dest_path.exists():
+            if len(self.content) > 0:
+                file_bytes = io.BytesIO(self.content)
+                zippedfile = zipfile.ZipFile(file_bytes)
+                zippedfile.extractall(dest_path)
             return True
         else:
             raise Exception('Invalid destination path specified')
