@@ -28,6 +28,10 @@ UI_BUILDER_DB = 'ui_builder_db'
 PACKAGE_MANAGER = 'PackageManager'
 COMMAND_BINDINGS = 'key_to_command_bindings'
 
+#----------------------------------------
+COMPONENT_MANAGER='ComponentManager'
+
+
 #global UI_BUILDER_DB_PATH
 UI_BUILDER_DB_PATH = _config.get(PACKAGE_INSTALLER, UI_BUILDER_DB)
 PACKAGE_FILE_EXTENSION = _config.get(PACKAGE_INSTALLER, PKG_FILE_EXT)

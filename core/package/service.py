@@ -28,77 +28,6 @@ from ui_builder.core.io import filesystem
 init_log.config_logs()
 logger = logging.getLogger(__name__)
 
-class ComponentInfo(object):
-    """Represents an component in package management system. A component is an object which can contain logic (in form of code),
-        resources (image, configuration, etc) and other similar objects. :class:`ComponentInfo` class contains the details about
-        an component like, source code, compiled code, templates, version, dependency on other components, etc
-    """
-
-    def __init__(self, name, path):
-        """An :class:`ComponentInfo` constructor requires two params -
-
-        Args:
-            name (str): Name of the component
-            base_path (str): A directory location which contains templates, config files, etc
-        """
-        self.id = None
-        self.name = name
-        self.description = None
-        self.type = None
-        self.author = None
-        self.version = None
-        self.is_enabled = True
-        self.is_installed = False
-        self.base_parent_id = None
-        self.base_path = path
-        self.template_path = os.path.join(path, '{0}.html'.format(name))
-        self.config_path = os.path.join(path,'{0}.comp'.format(name))
-        self.security_id = None
-        self.package_dependencies = {}
-        self.component_dependencies = {}
-
-    def _load_component_config(self):
-        """Loads details of component from local config file.
-            Config filename and component name should match else component will not load
-            This function will be used by the :class:`PackageInstaller` class only
-        """
-        self.config_file = utils.CheckedConfigParser()
-        self.config_file.read(self.config_path)
-        if self.name != self.config_file.get('Details', 'Name'):
-            err = 'Can not load component as filename[{0}] and name in config does not match'.format(self.name)
-            logger.error(err)
-            raise NameError(err)
-
-        self.id = self.config_file.get_or_none('Details', 'Id')
-        self.description = self.config_file.get_or_none('Details', 'Description')
-        self.type = self.config_file.get_or_none('Details', 'Type')
-        self.author = self.config_file.get_or_none('Details', 'Author')
-        self.version = self.config_file.get_or_none('Details', 'Version')
-        self.package_dependencies = self.config_file.items('PackageDependencies') if self.config_file.has_section('PackageDependencies') else {}
-        self.component_dependencies = self.config_file.items('ComponentDependencies') if self.config_file.has_section('ComponentDependencies') else {}
-        logger.info('Component loaded successfully...{0}'.format(self.name))
-
-    def load_details(self, comp_id, db_conn):
-        """Load details of component from database once component has been installed
-
-        Args:
-            comp_id (uuid): A unique :class:`uuid.uuid`id assigned to the component
-            db_conn (object): An open connection to metadata database
-        """
-        logger.debug('Loading details for component [{0}] from db'.format(comp_id))
-        if db_conn is not None:
-            comp_table = db_conn.table('Components')
-            Comp = Query()
-            comp_record = comp_table.get(Comp['Details']['id'] == comp_id)
-            if comp_record is not None:
-                self.__dict__ = comp_record['Details']
-            else:
-                logger.warn('Unable load details for comp [{0}] from db'.format(comp_id))
-            logger.debug('Details loaded succeasfully for component...{0}'.format(self.name))
-        else:
-            err = 'Database connection is invalid; Can''t load component details for...{0}'.format(comp_id)
-            logger.error(err)
-            raise Exception(err)
 
 class PackageInfo(object):
     """:class:`PackageInfo` class contains information about a package in the Package Managment System
@@ -1061,10 +990,10 @@ class ArchiveManager(object):
             package_name (str): This should be the package name and not a package "file" name
 
         Returns:
-            file_path (str): Absolute path to package file on file system
+            file_path (str): Absolute path to package file on file system or None
         """
         for file_name in os.listdir(self.archive_cache_location):
-            package_name = validFileName('{0}.{1}'.format(package_name, constants.PACKAGE_FILE_EXTENSION))
+            package_name = validFileName('{0}.{1}'.format(package_name, constants.PACKAGE_FILE_EXTENSION), initCap=False)
             if file_name.upper() == package_name.upper():
                 file_path = os.path.join(self.archive_cache_location, file_name)
                 if os.path.isfile(file_path):
