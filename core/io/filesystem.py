@@ -5,35 +5,43 @@
 
 .. moduleauthor:: Ajeet Singh <singh.ajeet@gmail.com>
 """
+import os
 from goldfinch import validFileName
 import pathlib
+import zipfile
 
 class File(object):
 
-    """Represents a file on file system """
+    """Represents a file on file system. This class supports :meth:`copy` and :meth:`move` commands only and for all other operations use :mod:`os` or :mod:`pathlib` modules. There are two attributes :attr:`os` and :attr:`path` which provides access to both of the above mentioned modules respectively
+    """
 
     def __init__(self, file_name, create_if_not_exists=False, base_path=None):
         """TODO: to be defined1. """
+        self._base_path = None
+        self._ext = None
+
         if create_if_not_exists == False:
             if base_path is None:
                 src_file = pathlib.Path(file_name)
             else:
                 src_file = pathlib.Path(base_path).joinpath(file_name)
             if src_file.exists():
-                self._name = src_file.name
-                self._base_path = src_file.parent.absolute()
-                self._content = src_file.read_bytes()
+                self.name = src_file.name
+                self.base_path = src_file.parent.absolute()
+                self.content = src_file.read_bytes()
+                self.exists = True
+                self.size = src_file.stat().st_size
+                self.path = src_file
             else:
                 raise Exception('Invalid file provided')
         else:
-            self._name = file_name
-            self._base_path = base_path
-
-        self._base_name = None
-        self._ext = None
-        self._size = 0
-        self._content = None
-        self._exists = False
+            self.name = file_name
+            self.base_path = base_path
+            self.exists = False
+            self.size = 0
+            self.path = pathlib.Path()
+            self.content = None
+        self.os = os
 
     def name():
         doc = "Full name of file"
@@ -148,3 +156,32 @@ class File(object):
                 old_file.unlink()
                 return new_file
         return None
+
+class PackageFile(File):
+
+    """Represents a physical package file in the package management system. This class supports 4 commands...
+
+            * copy
+            * move
+            * extract_to
+    """
+
+    def __init__(self, file_name, create_if_not_exists=False, base_path=None):
+        """TODO: to be defined1. """
+        super(PackageFile, self).__init__(self, file_name, create_if_not_exists, base_path)
+        if self.exists:
+            if not zipfile.is_zipfile(self.path._str):
+                raise Exception('Not a valid zip file')
+
+    def extract_to(self, dest_path):
+        """Extract the contents of package to the specified path
+
+        Args:
+            dest_path (str): path to the lication where package needs to be extracted
+        """
+        if os.path.exists(dest_path):
+            zippedfile = zipfile.ZipFile(self.path._str)
+            zippedfile.extractall(dest_path)
+            return True
+        else:
+            raise Exception('Invalid destination path specified')
