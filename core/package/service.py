@@ -22,7 +22,7 @@ import asyncio
 from goldfinch import validFileName
 from tinydb import TinyDB, Query, where
 from ui_builder.core.package import package_commands
-
+from ui_builder.core.io import filesystem
 
 #init logs ----------------------------
 init_log.config_logs()
@@ -934,6 +934,42 @@ class ArchiveManager(object):
         return locals()
     archive_cache_location = property(**archive_cache_location())
 
+    def move_package_to_cache(self, package_name):
+        """Moves the processed package to cache location for future references
+
+        Args:
+            package_name (str): Name of the package that needs to be moved
+
+        Returns:
+            status (bool): Returns True or False depending upon move ops result
+        """
+        if package_name is not None:
+            package_path = self.get_validated_package_path(package_name)
+            if package_path is not None:
+                package_file = filesystem.PackageFile(package_path)
+                status = package_file.move(self.archive_cache_location)
+                if status is not None:
+                    return True
+        return False
+
+    def restore_package_from_cache(self, package_name):
+        """Restore package from cache back to drop-in location for installation
+
+        Args:
+            package_name (str): Name of the package that needs to be restored
+
+        Returns:
+            status (bool): Returns true or false
+        """
+        if package_name is not None:
+            package_path = self.get_validated_package_cache_path(package_name)
+            if package_path is not None:
+                package_file = filesystem.PackageFile(package_path)
+                package = package_file.move(self.archive_drop_location)
+                if package is not None:
+                    return None
+        return False
+
     def get_validated_package_path(self, package_name):
         """Looks for a package file on local file system, check if it is a valid zip file
             and return back the path to package file
@@ -992,6 +1028,20 @@ class ArchiveManager(object):
         else:
             return False
 
+    def get_package(self, package_name):
+        """Find a package in drop-in location and return back file object
+
+        Args:
+            package_name (str): Package name that needs to be returned from drop-in location
+
+        Returns:
+            zipped_file (ZipFile): An instance of :class:`ZipFile` available in module :mod:`ui_builder.core.io.filesystem`
+        """
+        if self.is_package_available(package_name):
+            file_path = self.get_validated_package_path(package_name)
+            zipped_file = filesystem.PackageFile(file_path)
+            return zipped_file
+
     def is_package_available_in_cache(self, package_name):
         """Checks whether package exists in the archive cache or not
         """
@@ -1029,6 +1079,14 @@ class ArchiveManager(object):
 
     def get_package_from_cache(self, package_name):
         """Find a package in local archive location and return back file object
+
+        Args:
+            package_name (str): Package name that needs to be returned from cache
+
+        Returns:
+            zipped_file (ZipFile): An instance of :class:`ZipFile` available in module :mod:`ui_builder.core.io.filesystem`
         """
         if self.is_package_available_in_cache(package_name):
             file_path = self.get_validated_package_cache_path(package_name)
+            zipped_file = filesystem.PackageFile(file_path)
+            return zipped_file
