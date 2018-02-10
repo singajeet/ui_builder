@@ -21,7 +21,7 @@ import inspect
 import asyncio
 from goldfinch import validFileName
 from tinydb import TinyDB, Query, where
-from ui_builder.core.package import package_commands
+from ui_builder.core.package import package_commands, components
 from ui_builder.core.io import filesystem
 
 #init logs ----------------------------
@@ -257,15 +257,16 @@ class PackageManager(object):
         logger.info('Starting PackageManager...')
         self.packages_map = {}
         self.packages_name_id_map = {}
-        self.key_binding_config = ConfigParser.ConfigParser()
+        self.key_binding_config = configparser.ConfigParser()
         self.key_binding_config.read(os.path.join(conf_path, '{0}.cfg'.format(COMMAND_BINDINGS)))
-        self._load_key_command_bindings()
+        self.__load_key_command_bindings()
         logger.debug('Loading PackageManager Configuration...{0}'.format(conf_path))
         self.id = None
-        self._config = ConfigParser.ConfigParser()
-        self._config.read(os.path.join(conf_path,'ui_builder.cfg'))
-        self.pkg_install_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_INSTALL_LOC))
+        self.__config = configparser.ConfigParser()
+        self.__config.read(os.path.join(conf_path,'ui_builder.cfg'))
+        self.pkg_install_location = os.path.abspath(self.__config.get(PACKAGE_INSTALLER, PKG_INSTALL_LOC))
         ###Setup commands
+        self.__db_connection = TinyDB(UI_BUILDER_DB_PATH)
         self.installer = PackageInstaller(conf_path)
         self.commands = package_commands.PackageCommands(self)
         self.commands.register_commands()
@@ -294,12 +295,12 @@ class PackageManager(object):
         return locals()
     packages_map = property(**packages_map())
 
-    def _load_key_command_bindings(self):
+    def __load_key_command_bindings(self):
         """Loads the binding details between package manager's commands and associated keys
             These binding details will be used by the :class:`CommandManager`
         """
         for key, value in self.key_binding_config.items(PACKAGE_MANAGER):
-            self._key_to_command_mapping[key] = value
+            self.__key_to_command_mapping[key] = value
 
     def load_package(self, pkg_name):
         """Load package details from the database, create instance of :class:`PackageInfo`
@@ -312,12 +313,11 @@ class PackageManager(object):
         Returns:
             Instance of :class:`PackageInfo` class or None if not found
         """
-        _db = TinyDB(UI_BUILDER_DB_PATH)
-        _pkg_table = _db.table('Package_Index')
+        _pkg_table = self.__db_connection.table('Package_Index')
         _pkg = _pkg_table.get(Query()['name'] == pkg_name)
         if _pkg is not None:
             pkg = PackageInfo('')
-            pkg.load_details(_pkg.id, _db)
+            pkg.load_details(_pkg.id, self.__db_connection)
             self.packages_name_id_map[_pkg.name]=_pkg.id
             self.packages_map[_pkg.id] = pkg
             return pkg
@@ -327,12 +327,11 @@ class PackageManager(object):
     def load_packages(self):
         """Load all packages in the in-memory mapping property :attr:`packages_map`
         """
-        _db = TinyDB(UI_BUILDER_DB_PATH)
-        _package_table = _db.table('Package_Index')
+        _package_table = self.__db_connection.table('Package_Index')
         _all_packages = _package_table.all()
         for  pkg_record in _all_packages:
             pkg = PackageInfo('')
-            pkg.load_details(pkg_record.id, _db)
+            pkg.load_details(pkg_record.id, self.__db_connection)
             self.packages_name_id_map[pkg_record.name] = pkg_record.id
             self.packages_map[pkg_record.id] = pkg
         logger.debug('Packages map has been initialized successfully!')
@@ -441,7 +440,7 @@ class PackageManager(object):
                 _details.format('Version', pkg.version)
                 _details.format('Is Enabled', pkg.is_enabled)
                 _details.format('Is Installed', pkg.is_installed)
-                for comp in self._comp_name_list:
+                for comp in pkg.get_comp_name_list():
                     _details.format('Component', comp)
                 return _details.get_str()
             else:
@@ -642,6 +641,7 @@ class PackageInstaller(object):
         self.archive_manager = ArchiveManager(conf_path)
         global UI_BUILDER_DB_PATH
         UI_BUILDER_DB_PATH = self._config.get(PACKAGE_INSTALLER, UI_BUILDER_DB)
+        self.component_manager = components.ComponentManager(self.__db_connection)
 
     def pkg_install_location():
         doc = "The pkg_install_location property."
@@ -784,8 +784,10 @@ class PackageInstaller(object):
         return None
 
     def _register_package(self, pkg):
-        """TODO: Docstring for install_package.
-        :returns: TODO
+        """Registers the package with :class:`PackageManager` and its components with :class:`ComponentManager`
+
+        Args:
+            package (PackageInfo): An instance of :class:`PackageInfo`that needs to be registered
         """
         logger.debug('Loading package details stored at...{0}'.format(pkg._location))
         pkg._load_pkg_config()
@@ -808,15 +810,7 @@ class PackageInstaller(object):
         logger.debug('Processing child components now...')
         comp_table = db.table('Components')
         for name, comp in pkg._components.iteritems():
-            comp_details = comp.__dict__.copy()
-            comp_details['config_file'] = None
-            comp_details['template_env'] = None
-            comp_q = Query()
-            comp_entry = comp_table.upsert({'Location':comp.base_path, 'Details':comp_details}, comp_q['Details']['id'] == comp.id)
-            logger.debug('Component with name [{0}] and id [{1}] has been registered under package [{2}]'.format(comp.name, comp.id, pkg.name))
-            comp_idx_table = db.table('Components_Index')
-            comp_idx_q = Query()
-            comp_idx = comp_idx_table.upsert({'Id':comp.id, 'Name':comp.name, 'Package_Id':pkg.id, 'Package_Name':pkg.name}, comp_idx_q['Id'] == comp.id)
+            self.component_manager.register(comp.id, comp, pkg)
         return True
 
 class ArchiveManager(object):
