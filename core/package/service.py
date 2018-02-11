@@ -59,9 +59,9 @@ class PackageInfo(object):
         self.version = None
         self.is_enabled = True
         self.is_installed = False
-        self._comp_name_list = []
-        self._comp_name_id_map = {}
-        self._components = {}
+        self.__comp_name_list = []
+        self.__comp_name_id_map = {}
+        self.__components = {}
         self.package_dependencies = {}
 
     def config_file():
@@ -108,16 +108,16 @@ class PackageInfo(object):
         return locals()
     is_installed = property(**is_installed())
 
-    def _load_install_config(self):
+    def load_install_config(self):
         """Loads package details from config file during installation of this package
         """
-        logger.debug('Looking for pkg file in...{0}'.format(self.location))
+        logger.debug('Looking for package file in...{0}'.format(self.location))
         temp_pkg_files = os.listdir(self.location)
         conf_file = ''
         for f in temp_pkg_files:
-            if f.endswith('.pkg'):
+            if f.endswith(constants.PACKAGE_FILE_EXTENSION):
                 conf_file = f
-                logger.debug('{0} pkg file found'.format(f))
+                logger.debug('{0} package file found'.format(f))
                 break
 
         if conf_file == '':
@@ -135,25 +135,25 @@ class PackageInfo(object):
             self.url = self.config_file.get_or_none('Details', 'Url')
             self.version = self.config_file.get_or_none('Details', 'Version')
             self.company = self.config_file.get_or_none('Details', 'Company')
-            self._comp_name_list = self.config_file.get_or_none('Details', 'Components').split(',')
+            self.__comp_name_list = self.config_file.get_or_none('Details', 'Components').split(',')
             self.package_dependencies = self.conf_file.items('PackageDependencies') if self.conf_file.has_section('PackageDependencies') else {}
             logger.info('Package details loaded successfully...{0}'.format(self.name))
             logger.debug('Registring child components now...')
-            self._load_child_comp_config()
+            self.__load_child_comp_config()
 
-    def _load_child_comp_config(self):
+    def __load_child_comp_config(self):
         """Load details about all components which exists in this package
         """
-        if self._comp_name_list is None:
-            self._load_pkg_config()
-        if self._comp_name_list is not None:
-            for comp_name in self._comp_name_list:
+        if self.__comp_name_list is None:
+            self.load_install_config()
+        if self.__comp_name_list is not None:
+            for comp_name in self.__comp_name_list:
                 comp_path = os.path.join(self.location, comp_name.strip())
                 comp = ComponentInfo(comp_name.strip(), comp_path)
-                comp.parent_id = self.id
-                comp._load_component_config()
-                self._components[comp_name] = comp
-                self._comp_name_id_map[comp.id] = comp_name
+                comp.parent_id = self.id 
+                comp.load_install_config()
+                self.__components[comp_name] = comp
+                self.__comp_name_id_map[comp.id] = comp_name
                 logger.debug('Component with Name:{0} and Id:{1} loaded successfully'.format(comp_name, comp.id))
         else:
             err = 'Can not load components of package...{0}'.format(self.name)
@@ -174,10 +174,10 @@ class PackageInfo(object):
             pkg_record = pkg_table.get(Pkg['Details']['id'] == pkg_id)
             if pkg_record is not None:
                 self.__dict__ = pkg_record['Details']
-                for comp_id, comp_name in self._comp_name_id_map:
+                for comp_id, comp_name in self.__comp_name_id_map:
                     comp = ComponentInfo(comp_name, '')
                     comp.load_details(comp_id, db_conn)
-                    self._components[comp_name] = comp
+                    self.__components[comp_name] = comp
                     logger.debug('Component [{0}] with id [{1}] loaded and restored under pkg [{3}]'.format(comp_name, comp_id, self.name))
             logger.debug('Successfully loaded details for pkg [{0}]'.format(self.name))
         else:
@@ -190,11 +190,11 @@ class PackageInfo(object):
         Returns:
             comp_name_list ([str]): List of component names available in this package
         """
-        if self._comp_name_list is not None:
-            return self._comp_name_list
+        if self.__comp_name_list is not None:
+            return self.__comp_name_list
         else:
             self.load_details()
-            return self._comp_name_list
+            return self.__comp_name_list
 
     def get_components(self):
         """Returns instances of all components which are part of this package
@@ -202,11 +202,11 @@ class PackageInfo(object):
         Returns:
             components ([object]): Returns list of components instances
         """
-        if self._components is not None:
-            return self._components
+        if self.__components is not None:
+            return self.__components
         else:
             self.load_components()
-            return self._components
+            return self.__components
         return None
 
     def get_component(self, comp_name):
@@ -218,8 +218,8 @@ class PackageInfo(object):
         Returns:
             An instance of component if found else None
         """
-        if self._comp_name_list is not None:
-            return self._components[comp_name]
+        if self.__comp_name_list is not None:
+            return self.__components[comp_name]
 
         return None
 
@@ -232,15 +232,63 @@ class PackageInfo(object):
         Returns:
             An instance of component or None
         """
-        if self._components is not None and self._comp_name_id_map is not None:
-            if self._comp_name_id_map[comp_id] is not None:
-                return self._comp_name_id_map[comp_id]
+        if self.__components is not None and self.__comp_name_id_map is not None:
+            if self.__comp_name_id_map[comp_id] is not None:
+                return self.__comp_name_id_map[comp_id]
             else:
                 return None
         else:
             return None
 
+
+class PackageIndexManager(object):
+    """Provides indexing functionality of packages in all of the package sources """
+
+    __single_package_index_manager = None
+
+    def __new__(cls, *args, **kwargs):
+        """Class instance creator
+        """
+        if cls != type(cls.__single_package_index_manager):
+            cls.__single_package_index_manager = object.__new__(cls, *args, **kwargs)
+        return cls.__single_package_index_manager
+    def __init__(self, db_connection):
+        """TODO: to be defined1. """
+       
+    def get_package_list(self):
+        """TODO: Docstring for get_package_list.
+        :returns: TODO
+
+        """
+        pass
+
+    def get_all_sources(self):
+        """TODO: Docstring for get_all_sources.
+        :returns: TODO
+
+        """
+        pass
+
+    def find_package(self, package_name):
+        """TODO: Docstring for find_package.
+
+        :package_namearg1: TODO
+        :returns: TODO
+
+        """
+        pass
+
 class PackageManager(object):
+    
+    __single_package_manager = None
+
+    def __new__(cls, *args, **kwargs):
+        """Class instance creator
+        """
+        if cls != type(cls.__single_package_manager):
+            cls.__single_package_manager = object.__new__(cls, *args, **kwargs)
+        return cls.__single_package_manager
+
     def __init__(self, conf_path):
         """:class:`PackageManager` is an interface to the package management system and
             provide functionality (to find, install, load, etc) to manage various kinds of
@@ -278,6 +326,7 @@ class PackageManager(object):
         self.downloader = PackageDownloader(conf_path)
         self.archive_manager = ArchiveManager(conf_path)
         self.component_manager = components.ComponentManager(self.__db_connection)
+        self.package_index_manager = PackageIndexManager(self.__db_connection)
 
     def packages_name_id_map():
         doc = "This property provides the mapping of package id to its name for fast lookup"
@@ -342,30 +391,79 @@ class PackageManager(object):
             self.packages_map[pkg_record.id] = pkg
         logger.debug('Packages map has been initialized successfully!')
 
-    def install_package(self, package_name):
-        """Install package on local file system. It will follow the below mentioned workflow for installation-
+    def __get_package_file(self, package_name):
+        """Gets the physical package file from drop-in location, archive cache, index manager or download from source.
+            Following workflow will be used to get the package file
+        
             1. Request package from :class:`ArchiveManager`-
                 1.1. If available in archive cache, ArchiveManager will return it for installation
                 1.2. :class:`PackageManager` will forward the package to :class:`PackageInstaller` for further installation
             2. If not found in cache, the request will be forwarded to :class:`PackageIndexManager` to find the source of package
-                2.1. If found in index, an instance of :class:`PackageSource` and request will be forwarded to :class:`PackageDownloader` to download package from respective source
-                2.2. Once downloaded, request will goto :class:`PackageInstaller` for installation after package unarchived by :class:`ArchiveManager`
+                2.1. If found in index, an instance of :class:`PackageSource` and request will be forwarded to :class:`PackageDownloader`
+                     to download package from respective source
+                2.2. Once downloaded, request will goto :class:`PackageInstaller` for installation after package unarchived 
+                     by :class:`ArchiveManager`
                 2.3. After installation, :class:`ArchiveManager` and :class:`PackageManager` will update its respective cache
-            3. If not found in local index, an 'index refresh' request will be generated and process will start again from step '2' (once the index is refreshed)
+            3. If not found in local index, an 'index refresh' request will be generated and process will start again 
+               from step '2' (once the index is refreshed)
 
-        Note:
-            Please refer to :class:`PackageIndexManager` for more information on 'PackageIndex' refresh request
+        Args:
+            package_name (str): Package name for which file needs to be returned
+
+        Returns:
+            package_file (PackageFile): An instance of :class:`PackageFile` having package content
         """
         #Step 1 - find package in archive manager and install
         _package_file = None
         if self.archive_manager.is_package_available(package_name):
             _package_file = self.archive_manager.get_package(package_name)
         elif self.archive_manager.is_package_available_in_cache(package_name):
+            #Step 1.1
             _package_file = self.archive_manager.get_package_from_cache(package_name)
 
+        #Step 2 - Get source of package from :class:`PackageIndexManager`
+        if _package_file is None:
+            pass
+        #[Place Holder for step 2]
+        #Step 2.1 - Package found in index, ask :class:`PackageDownloader` to download package in :attr:`pkg_drop_location`
+        #[Place Holder for step 2.1]
+        #Step 2.2 - Get the downloaded physical package file :class:`PackageFile` from :class:`ArchiveManager`
+        #[Place Holder for step 2.2]
+        return _package_file
+
+    def install_package(self, package_name):
+        """Install package on local file system. This class will use :meth:`__get_package_file` to get the package file
+
+        Args:
+            package_name (str): Name of the package that needs to be installed
+
+        Returns:
+            status (bool): True or False
+            message (str): Failure details
+
+        Note:
+            Please refer to :class:`PackageIndexManager` for more information on 'PackageIndex' refresh request
+        """
+        if package_name is None:
+            raise Exception('Can''t accept blank package name')
+
+        _package_file = self.__get_package_file(package_name)
         if _package_file is not None:
-            _status = self.installer.install_package(package_name, package_file)
+            #Step 1.2 & 2.2 - Install package
+            _status = self.installer.install_package(package_name, _package_file)
+            #Step 2.3 - Update caches
+            #[Place Holder for step 2.3]
             return status
+        else:
+            #Step 3 - Get local index refreshed from :class:`PackageIndexManager`
+            pass
+            #[Place Holder for Step 3.1] - Call PackageManager.index_refresh()
+            #Step 3.2 - Start process again from step 2
+            _package_file = self.__get_package_file(package_name)
+            
+        #Install the package if found
+        if _package_file is not None:
+            _status = self.installer.install_package(package_name, _package_file)
         else:
             return (False, 'Package not found...{0}'.format(file_name))
 
@@ -394,7 +492,7 @@ class PackageManager(object):
         """
         return self.installer.uninstall_package(package_name)
 
-    def update_packages_enabled_status(self, status, package_list):
+    def __update_packages_enabled_status(self, status, package_list):
         """Changes the :attr:`is_enabled` property of a package
 
         Args:
@@ -406,7 +504,7 @@ class PackageManager(object):
             message (str): Reason for failure
         """
         _results = {}
-        for package_name in self.package_list:
+        for package_name in package_list:
             if self.packages_name_id_map.__contains__(package_name):
                 _package_id = self.packages_name_id_map[package_name]
                 if self.packages_map.__contains__(_package_id):
@@ -416,7 +514,7 @@ class PackageManager(object):
                     _package_table = self.__db_connection.table('Packages')
                     _package_record = _package_table.get(Query['Details']['id'] == _package_id)
                     _package_record['Details']['is_enabled'] = status
-                    _package_table.update({'Details': _package_record}, Query()['Details']['id']==package_id)
+                    _package_table.update({'Details': _package_record}, Query()['Details']['id'] == _package_id)
                     _status = (True, '')
                     _results[package_name] = _status
                 else:
@@ -425,7 +523,7 @@ class PackageManager(object):
             else:
                 _status = (False, 'No such package exists in package_name->package_id map')
                 _results[package_name] = _status
-        return results
+        return _results
 
     def activate_packages(self, package_list):
         """Same as :meth:`update_packages_enabled_status` but call this function with status=True
@@ -438,7 +536,7 @@ class PackageManager(object):
             status (bool): Returns True or False
             message (str): Reason for failure
         """
-        return self.update_packages_enabled_status(True, package_list)
+        return self.__update_packages_enabled_status(True, package_list)
 
     def activate_package(self, package_name):
         """Same as activate packages function but accepts only one package at a time
@@ -464,7 +562,7 @@ class PackageManager(object):
             status (bool): True or False
             message (str): Reason for failure
         """
-        return self.update_packages_enabled_status(False, package_list)
+        return self.__update_packages_enabled_status(False, package_list)
 
     def deactivate_package(self, package_name):
         """Same as :meth:`deactivate_packages` but works for only one package at a time
@@ -478,15 +576,10 @@ class PackageManager(object):
         return self.deactivate_packages(package_list)
 
     def list_packages(self):
-        """TODO: Docstring for list_packages.
-        :returns: TODO
         """
-        if self.packages_name_id_map is None or len(self.packages_name_id_map) <= 0:
-            self.load_packages()
-        pkgs = self.downloader.list_packages()
-        if pkgs is not None:
-            pkgs['Local Packages'] = self.packages_name_id_map.keys()
-        return pkgs
+         Provides an list of all installed packages 
+        """
+        return self.package_index_manager.get_package_list()
 
     def show_package(self, pkg_name):
         """TODO: Docstring for show_package.
@@ -514,46 +607,24 @@ class PackageManager(object):
                 return _details.get_str()
             else:
                 return 'Unable to get details as package [{0}] is not availabel locally\n'\
-                        'Kindly download package first using below command:\n'\
-                        'Package download <pkg name>'.format(pkg_name)
+                        'Kindly refresh the packages index'
         else:
                 raise Exception('Package not found...{0}'.format(pkg_name))
-
-    def download_package(self, package_name, source_name=None):
-        """TODO: Docstring for download_package.
-        :pkg_nam: TODO
-        :returns: TODO
-        """
-        result = None
-        if source_name is None:
-            #search package in all sources
-            for src_name, src in self.downloader.download_src.iteritems():
-                result = self.downloader.find_package(src_name, package_name)
-                if result is not None:
-                    return self.downloader.download(src_name, package_name)
-        else:
-            return self.downloader.download(source_name, package_name)
-        return 'NOT_FOUND'
 
     def list_sources(self):
         """TODO: Docstring for list_sources.
         :returns: TODO
 
         """
-        return self.downloader.download_src
+        return self.package_index_manager.get_all_sources()
 
-    def find_package(self, pkg_name):
-        """TODO: Docstring for find_package.
-
-        :pkg_name: TODO
-        :returns: TODO
-
+    def find_package(self, package_name):
+        """Finds an package by name in all available sources
         """
-        for src_name, src in self.downloader.download_src.iteritems():
-            result = self.downloader.find_package(src_name, pkg_name)
-            if result is not None:
-                return result
-        return None
+        if package_name is not None:
+            return self.package_index_manager.find_package(package_name)
+        else:
+            raise Exception('No such package found...{0}'.format(package_name))
 
 class PackageSource(object):
     """Docstring for PackageSource. """
@@ -608,6 +679,15 @@ class PackageSource(object):
 
 class PackageDownloader(object):
     """Docstring for PackageDownloader. """
+
+    __single_package_downloader = None
+
+    def __new__(cls, *args, **kwargs):
+        """Class instance creator
+        """
+        if cls != type(cls.__single_package_downloader):
+            cls.__single_package_downloader = object.__new__(cls, *args, **kwargs)
+        return cls.__single_package_downloader
 
     def __init__(self, conf_path):
         """TODO: to be defined1. """
@@ -698,7 +778,19 @@ class PackageDownloader(object):
             raise Exception('Source and Package names can''t be null')
 
 class PackageInstaller(object):
-    """Installs the package on local system. This class interacts with :class:`PackageDownloader` or :class:`ArchiveManager` to complete its operation """
+    """Installs the package on local system. This class interacts with :class:`PackageDownloader` 
+        or :class:`ArchiveManager` to complete its operation 
+    """
+
+    __single_package_installer = None
+
+    def __new__(cls, *args, **kwargs):
+        """Class instance creator
+        """
+        if cls != type(cls.__single_package_installer):
+            cls.__single_package_installer = object.__new__(cls, *args, **kwargs)
+        return cls.__single_package_installer
+
     def __init__(self, package_manager, conf_path):
         """TODO: to be defined1. """
         logger.debug('Loading PackageInstaller Configuration...{0}'.format(conf_path))
