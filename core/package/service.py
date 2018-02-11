@@ -746,23 +746,24 @@ class PackageInstaller(object):
         else:
             logger.info('Package from following file is installed...{0}'.format(pkg_path))
 
-    def _extract_package(self, file):
-        """TODO: Docstring for extract_package.
-        :file: TODO
-        :returns: TODO
+    def _extract_package(self, package_file):
+        """Extracts the package from :class:`PackageFile` instance to the installation configured location
+        Args:
+            package_file (PackageFile): An instance of :mod:`ui_builder.core.io` :class:`PackageClass`
+
+        Returns: 
+            pkg_path (str): Returns the path to extracted package location
         """
-        logger.debug('Extracting package content...{0}'.format(file))
+        logger.debug('Extracting package content...{0}'.format(package_file.name))
         pkg_overwrite_mode = self._config.get(PACKAGE_INSTALLER, PKG_OVERWRITE_MODE)
-        pkg_file_name = os.path.basename(file)
-        pkg_dir_name = os.path.join(self.pkg_install_location, pkg_file_name.rstrip('.zip'))
+        _pkg_install_location = os.path.join(self.pkg_install_location, package_file.base_name)
         if pkg_overwrite_mode.upper() == 'on'.upper():
             logger.info('Overwrite mode is on, package content will be replaced with new files')
-            if os.path.exists(pkg_dir_name):
-                shutil.rmtree(pkg_dir_name)
-        zip_pkg = zipfile.ZipFile(file)
-        zip_pkg.extractall(self.pkg_install_location)
-        logger.debug('Pkg extracted to...{0}'.format(pkg_dir_name))
-        return pkg_dir_name
+            if os.path.exists(_pkg_install_location):
+                shutil.rmtree(_pkg_install_location)
+        package_file.extract_to(_pkg_install_location)
+        logger.debug('Pkg extracted to...{0}'.format(_pkg_install_location))
+        return _pkg_install_location
 
     def _validate_package(self, pkg_path):
         """TODO: Docstring for validate_package.
