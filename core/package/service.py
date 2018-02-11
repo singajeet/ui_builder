@@ -20,6 +20,7 @@ import pathlib
 import importlib
 import inspect
 import asyncio
+import warnings
 from goldfinch import validFileName
 from tinydb import TinyDB, Query, where
 from ui_builder.core.package import package_commands, components
@@ -145,7 +146,6 @@ class PackageInfo(object):
         """
         if self._comp_name_list is None:
             self._load_pkg_config()
-
         if self._comp_name_list is not None:
             for comp_name in self._comp_name_list:
                 comp_path = os.path.join(self.location, comp_name.strip())
@@ -357,62 +357,125 @@ class PackageManager(object):
             Please refer to :class:`PackageIndexManager` for more information on 'PackageIndex' refresh request
         """
         #Step 1 - find package in archive manager and install
+        _package_file = None
         if self.archive_manager.is_package_available(package_name):
-            self.installer.install_package(package_name)
-        else:
-            status = self.download_package(package_name)
-            if status == 'SUCCESS':
-                self.installer.install_package(package_name)
-                return status
-            else:
-                raise Exception('Package not found...{0}'.format(file_name))
+            _package_file = self.archive_manager.get_package(package_name)
+        elif self.archive_manager.is_package_available_in_cache(package_name):
+            _package_file = self.archive_manager.get_package_from_cache(package_name)
 
-    def install_packages(self):
-        """TODO: Docstring for install_packages.
-        :returns: TODO
+        if _package_file is not None:
+            _status = self.installer.install_package(package_name, package_file)
+            return status
+        else:
+            return (False, 'Package not found...{0}'.format(file_name))
+
+    def install_packages(self, package_list=[]):
+        """Install packages provided as list
+        Args:
+            package_list (list): Name of packages to be installed
+        Returns:
+            results (list): Returns a list of results for all packages passed to this function
         """
-        self.installer.install_packages()
+        _results = {}
+        for package in package_list:
+            _status = self.install_package(package)
+            _results[package] = _status
+        return _results
 
     def uninstall_package(self, package_name):
-        """TODO: Docstring for uninstall_package.
+        """Uninstall the package from system. This call will be forwarded to installer for performing the operation
 
         Args:
             package_name (str): Name of the package that needs to be uninstalled
 
         Returns:
-            None
+            status (bool): Returns True or False
+            message (str): Reason in case of failure
         """
-        self.installer.uninstall_package(package_name)
+        return self.installer.uninstall_package(package_name)
 
-    def activate_packages(self):
-        """TODO: Docstring for activate_packages.
-        :arg1: TODO
-        :returns: TODO
+    def update_packages_enabled_status(self, status, package_list):
+        """Changes the :attr:`is_enabled` property of a package
+
+        Args:
+            status (bool): The new value of is_enabled property
+            package_list (list): A list of package names that needs to be updated
+
+        Returns:
+            status (bool): Returns True or False
+            message (str): Reason for failure
         """
-        for pkg_id, pkg in self.packages_map:
-            pkg.is_enabled = True
+        _results = {}
+        for package_name in self.package_list:
+            if self.packages_name_id_map.__contains__(package_name):
+                _package_id = self.packages_name_id_map[package_name]
+                if self.packages_map.__contains__(_package_id):
+                    _package = self.packages_map[_package_id]
+                    _package.is_enabled = status
+                    self.packages_map[_package_id] = _package
+                    _package_table = self.__db_connection.table('Packages')
+                    _package_record = _package_table.get(Query['Details']['id'] == _package_id)
+                    _package_record['Details']['is_enabled'] = status
+                    _package_table.update({'Details': _package_record}, Query()['Details']['id']==package_id)
+                    _status = (True, '')
+                    _results[package_name] = _status
+                else:
+                    _status = (False, 'No such package exists in package_id->package map')
+                    _results[package_name] = _status
+            else:
+                _status = (False, 'No such package exists in package_name->package_id map')
+                _results[package_name] = _status
+        return results
+
+    def activate_packages(self, package_list):
+        """Same as :meth:`update_packages_enabled_status` but call this function with status=True
+            to activate all packages in list
+
+        Args:
+            package_list (list): A list of package names that needs to be updated
+
+        Returns:
+            status (bool): Returns True or False
+            message (str): Reason for failure
+        """
+        return self.update_packages_enabled_status(True, package_list)
 
     def activate_package(self, package_name):
-        """TODO: Docstring for activate_package.
-        :returns: TODO
+        """Same as activate packages function but accepts only one package at a time
+
+        Args:
+            package_name (str): Packages's name that needs to be activated
+
+        Returns:
+            status (bool): True or False
+            message (str): Reason for failure
         """
-        pkg = self.packages_map[self.packages_name_id_map[package_name]]
-        pkg.is_enabled = True
+        _package_list = []
+        _package_list.append(package_name)
+        return self.activate_packages(_package_list)
+
+    def deactivate_packages(self, package_list):
+        """Same as :meth:`activate_packages` but passes value False to deactivate packages
+
+        Args:
+            package_list (list): List of packages that needs to be deactivated
+
+        Returns:
+            status (bool): True or False
+            message (str): Reason for failure
+        """
+        return self.update_packages_enabled_status(False, package_list)
 
     def deactivate_package(self, package_name):
-        """TODO: Docstring for deactivate_package.
-        :package_id: TODO
-        :returns: TODO
-        """
-        pkg = self.packages_map[self.packages_name_id_map[package_name]]
-        pkg.is_enabled = False
+        """Same as :meth:`deactivate_packages` but works for only one package at a time
 
-    def deactivate_packages(self):
-        """TODO: Docstring for deactivate_packages.
-        :returns: TODO
+        Returns:
+            status (bool): True or False
+            message (str): Reason for failure
         """
-        for pkg_id, pkg in self.packages_map.iteritems():
-            pkg.is_enabled = False
+        package_list=[]
+        package_list.append(package_name)
+        return self.deactivate_packages(package_list)
 
     def list_packages(self):
         """TODO: Docstring for list_packages.
@@ -719,8 +782,10 @@ class PackageInstaller(object):
         registered = self.__register_package(package_info)
         if registered == False:
             logger.warn('Unable to register package, check logs for more info...{0}'.format(package_name))
+            return False
         else:
             logger.info('Package has been installed successfully...{0}'.format(package_name))
+            return True
 
     def __validate_package(self, package_path):
         """Validates the content of extracted package on file system and returns an instance :class:`PackageInfo` if validated successfully
