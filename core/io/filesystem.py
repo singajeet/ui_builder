@@ -10,6 +10,7 @@ from goldfinch import validFileName
 import pathlib
 import zipfile
 import io
+import shutil
 
 class File(object):
 
@@ -188,11 +189,13 @@ class PackageFile(File):
             if not zipfile.is_zipfile(self.path._str):
                 raise Exception('Not a valid zip file')
 
-    def extract_to(self, target_path):
+    def extract_to(self, target_path, name_as_sub_folder=True, overwrite=False):
         """Extract the contents of package to the specified path
 
         Args:
             target_path (str): path to the lication where package needs to be extracted
+            name_as_sub_folder (bool): creates a sub folder under target_path with the same name as package file name before extracting contents. Default value is True
+            overwrite (bool): Overwrites the contents if already exists in target location
         """
         if target_path is not None and target_path.find('~') >= 0:
             dest_path = pathlib.Path(target_path).expanduser()
@@ -201,10 +204,21 @@ class PackageFile(File):
         else:
             raise Exception('Can''t accept blank for destination path')
         if dest_path.exists():
+            if name_as_sub_folder==True:
+                dest_path = dest_path.joinpath(self.base_name).absolute()
+                if not dest_path.exists():
+                    dest_path.mkdir(parents=True)
+            else:
+                if overwrite == True:
+                    for f in dest_path.iterdir():
+                        if f.is_dir():
+                            shutil.rmtree(f)
+                        else:
+                            f.unlink()
             if len(self.content) > 0:
                 file_bytes = io.BytesIO(self.content)
                 zippedfile = zipfile.ZipFile(file_bytes)
                 zippedfile.extractall(dest_path)
-            return True
+            return dest_path
         else:
             raise Exception('Invalid destination path specified')

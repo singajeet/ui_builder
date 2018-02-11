@@ -16,6 +16,7 @@ import zipfile
 import logging
 import shutil
 import glob
+import pathlib
 import importlib
 import inspect
 import asyncio
@@ -35,15 +36,19 @@ class PackageInfo(object):
         between components and other packages, same will be defined in this class
     """
 
-    def __init__(self, location=None):
+    def __init__(self, config_file_path=None):
         """:class:`PackageInfo` class have one required parameter
 
         Args:
-            location (str): Location of the package on the local file system where package is installed
+            config_file_path (str): Location of the package on the local file system where package is installed
         """
+        if config_file_path is not None:
+            config_file_path = pathlib.Path(config_file_path).absolute() if config_file_path.find('~') < 0 else pathlib.Path(config_file_path).expanduser()
+        else:
+            raise Exception('Path to config file can''t be none')
         self.id = None
-        self.location = location
-        self.config_file = None
+        self.location = config_file_path.parent
+        self.config_file = config_file_path
         self.name = None
         self.description = None
         self.type = None
@@ -102,7 +107,7 @@ class PackageInfo(object):
         return locals()
     is_installed = property(**is_installed())
 
-    def _load_pkg_config(self):
+    def _load_install_config(self):
         """Loads package details from config file during installation of this package
         """
         logger.debug('Looking for pkg file in...{0}'.format(self.location))
@@ -246,7 +251,7 @@ class PackageManager(object):
 
                 * :class:`PackageInstaller` - Install the package in system by updating its info in DB
                 * :class:`PackageDownloader` - Downloads the package from relevant source
-                * :class:`ArchiveManager` - Expands the package on local file system during installation 
+                * :class:`ArchiveManager` - Expands the package on local file system during installation
                                             & keeps copy of uninstalled archived package in its local cache
                 * :class:`PackageSource` - The source of an package
                 * :class:`PackageIndexManager` - Maintains the index list of all packages (installed & uninstalled both)
@@ -272,6 +277,7 @@ class PackageManager(object):
         self.commands.register_commands()
         self.downloader = PackageDownloader(conf_path)
         self.archive_manager = ArchiveManager(conf_path)
+        self.component_manager = components.ComponentManager(self.__db_connection)
 
     def packages_name_id_map():
         doc = "This property provides the mapping of package id to its name for fast lookup"
@@ -352,11 +358,11 @@ class PackageManager(object):
         """
         #Step 1 - find package in archive manager and install
         if self.archive_manager.is_package_available(package_name):
-            self.installer.install_package(file_name)
+            self.installer.install_package(package_name)
         else:
-            status = self.download_package(file_name)
+            status = self.download_package(package_name)
             if status == 'SUCCESS':
-                self.installer.install_package(file_name)
+                self.installer.install_package(package_name)
                 return status
             else:
                 raise Exception('Package not found...{0}'.format(file_name))
@@ -629,19 +635,19 @@ class PackageDownloader(object):
             raise Exception('Source and Package names can''t be null')
 
 class PackageInstaller(object):
-    """Docstring for PackageInstaller. """
-    def __init__(self, conf_path):
+    """Installs the package on local system. This class interacts with :class:`PackageDownloader` or :class:`ArchiveManager` to complete its operation """
+    def __init__(self, package_manager, conf_path):
         """TODO: to be defined1. """
         logger.debug('Loading PackageInstaller Configuration...{0}'.format(conf_path))
         self.id = None
-        self._config = ConfigParser.ConfigParser()
+        self._config = configparser.ConfigParser()
         self._config.read(os.path.join(conf_path,'ui_builder.cfg'))
         self.pkg_install_location = os.path.abspath(self._config.get(PACKAGE_INSTALLER, PKG_INSTALL_LOC))
         logger.debug('Packages will be installed in following location...{0}'.format(self.pkg_install_location))
-        self.archive_manager = ArchiveManager(conf_path)
+        self.package_manager = package_manager
+
         global UI_BUILDER_DB_PATH
         UI_BUILDER_DB_PATH = self._config.get(PACKAGE_INSTALLER, UI_BUILDER_DB)
-        self.component_manager = components.ComponentManager(self.__db_connection)
 
     def pkg_install_location():
         doc = "The pkg_install_location property."
@@ -654,34 +660,10 @@ class PackageInstaller(object):
         return locals()
     pkg_install_location = property(**pkg_install_location())
 
-
-    def archive_manager():
-        doc = "The archive_manager property."
-        def fget(self):
-            return self._archive_manager
-        def fset(self, value):
-            self._archive_manager = value
-        def fdel(self):
-            del self._archive_manager
-        return locals()
-    archive_manager = property(**archive_manager())
-
-    def archive_files():
-        doc = "The archive_files property."
-        def fget(self):
-            return self._archive_files
-        def fset(self, value):
-            self._archive_files = value
-        def fdel(self):
-            del self._archive_files
-        return locals()
-    archive_files = property(**archive_files())
-
-    def _get_archive_files_list(self):
-        self.archive_files = self.archive_manager.load_archives()
-
     def uninstall_package(self, package_name):
-        """TODO: Docstring for uninstall_packages.
+        """Uninstall a package from the system.
+        Note:
+            Though the package will be uninstalled from the system, but an copy of archived package will be available in archive cache
 
         Args:
             package_name (str): Name of package that needs to be uninstalled
@@ -700,6 +682,7 @@ class PackageInstaller(object):
                 if len(pkg_record) > 0:
                     if len(pkg_record) == 1:
                         location = pkg_record['Location']
+                        #WARNING-This section physically removes the package and its components from file system and unregisters it from index and registry. PackageManager should take care of unregistering the components once this ops gets completed successfully
                         if location is not None and os.path.exists(location):
                             shutil.rmtree(location, ignore_errors=True)
                             pkg_tbl.remove(Query['Details']['id'] == pkg.id)
@@ -724,98 +707,87 @@ class PackageInstaller(object):
         else:
             logger.warn('No such package exists...{0}'.format(package_name))
 
-    def install_packages(self):
-        """TODO: Docstring for install_packages.
-        :arg1: TODO
-        :returns: TODO
-        """
-        self._get_archive_files_list()
-        for file in self.archive_files:
-            self.install_package(file)
-
-    def install_package(self, file_name):
-        """TODO: Docstring for install_package.
-        :returns: TODO
-        """
-        file = self.archive_manager.load_archive(file_name)
-        pkg_path = self._extract_package(file)
-        pkg = self._validate_package(pkg_path)
-        registered = self._register_package(pkg)
-        if registered == False:
-            logger.warn('Unable to register pkg from the following file, check logs for more info...{0}'.format(pkg_path))
-        else:
-            logger.info('Package from following file is installed...{0}'.format(pkg_path))
-
-    def _extract_package(self, package_file):
-        """Extracts the package from :class:`PackageFile` instance to the installation configured location
+    def install_package(self, package_name, package_file):
+        """Install package on the local file system
         Args:
-            package_file (PackageFile): An instance of :mod:`ui_builder.core.io` :class:`PackageClass`
-
-        Returns: 
-            pkg_path (str): Returns the path to extracted package location
+            package_name (str): Name of the package that needs to be installed
+            package_file (PackageFile): An instance of :mod:`ui_builder.core.io.filesystem`.:class:`PackageFile`
         """
-        logger.debug('Extracting package content...{0}'.format(package_file.name))
-        pkg_overwrite_mode = self._config.get(PACKAGE_INSTALLER, PKG_OVERWRITE_MODE)
-        _pkg_install_location = os.path.join(self.pkg_install_location, package_file.base_name)
-        if pkg_overwrite_mode.upper() == 'on'.upper():
-            logger.info('Overwrite mode is on, package content will be replaced with new files')
-            if os.path.exists(_pkg_install_location):
-                shutil.rmtree(_pkg_install_location)
-        package_file.extract_to(_pkg_install_location)
-        logger.debug('Pkg extracted to...{0}'.format(_pkg_install_location))
-        return _pkg_install_location
+        package_overwrite_mode = True if self._config.get(PACKAGE_INSTALLER, PKG_OVERWRITE_MODE).upper() == 'ON' else False
+        package_path = package_file.extract_to(self.pkg_install_location, overwrite=package_overwrite_mode)
+        package_info = self.__validate_package(package_path)
+        registered = self.__register_package(package_info)
+        if registered == False:
+            logger.warn('Unable to register package, check logs for more info...{0}'.format(package_name))
+        else:
+            logger.info('Package has been installed successfully...{0}'.format(package_name))
 
-    def _validate_package(self, pkg_path):
-        """TODO: Docstring for validate_package.
-        :pkg_path: TODO
-        :returns: TODO
+    def __validate_package(self, package_path):
+        """Validates the content of extracted package on file system and returns an instance :class:`PackageInfo` if validated successfully
+
+        Args:
+            package_path (Path): An instance of :mod:`pathlib`.:class:`Path` pointing to physical package file
+
+        Returns:
+            package (PackageInfo): Returns an instace of :class:`PackageInfo`
         """
-        logger.debug('Validating package at location...{0}'.format(pkg_path))
+        logger.debug('Validating package at location...{0}'.format(package_path))
         #find .pkg files
-        pkg_file = glob.glob(os.path.join(pkg_path, '*.pkg'))
-        if len(pkg_file) == 1:
-            pkg = Package(pkg_path)
-            logger.debug('Package definition found at...{0}'.format(pkg_file[0]))
-            return pkg
-        elif len(pkg_file) > 1:
+        package_config_file = glob.glob(os.path.join(package_path, '*.pkg'))
+        if len(package_config_file) == 1:
+            package_info = PackageInfo(package_config_file)
+            logger.debug('Package definition found...{0}'.format(package_config_file[0]))
+            return package_info
+        elif len(package_config_file) > 1:
             logger.warn('Multiple .pkg files found. A valid package should have only one .pkg file')
             return None
         else:
             logger.warn('No .pkg file found. A package should have exactly one .pkg file')
         return None
 
-    def _register_package(self, pkg):
+    def __register_package(self, package_info):
         """Registers the package with :class:`PackageManager` and its components with :class:`ComponentManager`
 
         Args:
-            package (PackageInfo): An instance of :class:`PackageInfo`that needs to be registered
+            package_info (PackageInfo): An instance of :class:`PackageInfo`that needs to be registered
         """
-        logger.debug('Loading package details stored at...{0}'.format(pkg._location))
-        pkg._load_pkg_config()
+        logger.debug('Loading package details stored at...{0}'.format(package_info.location))
+        package_info._load_install_config()
         logger.debug('Open connection to database: {0}'.format(UI_BUILDER_DB_PATH))
         #global UI_BUILDER_DB_PATH
         db = TinyDB(UI_BUILDER_DB_PATH)
         q = Query()
-        pkg_table = db.table('Packages')
-        pkg.is_enabled = True
-        pkg.is_installed = True
-        pkg_details = pkg.__dict__.copy()
+        package_table = db.table('Packages')
+        package_info.is_enabled = True
+        package_info.is_installed = True
+        package_details = package_info.__dict__.copy()
         #we will not save config and component objects
-        pkg_details['_config_file'] = None
-        pkg_details['_components'] = None
-        pkg_entry = pkg_table.upsert({'Location':pkg._location, 'Details':pkg_details}, q['Details']['id'] == pkg.id)
-        logger.debug('Package with name [{0}] and id [{1}] has been registered'.format(pkg.name, pkg.id))
-        pkg_idx_table = db.table('Package_Index')
-        idx_q = Query()
-        pkg_idx = pkg_idx_table.upsert({'Id':pkg.id, 'Name':pkg.name}, idx_q['Id'] == pkg.id)
+        package_details['_config_file'] = None
+        package_details['_components'] = None
+        package_entry = package_table.upsert({'Location':package_info.location, 'Details':package_details}, q['Details']['id'] == package_info.id)
+        logger.debug('Package with name [{0}] and id [{1}] has been registered'.format(package_info.name, package_info.id))
+        package_index_table = db.table('Package_Index')
+        index_q = Query()
+        package_index = package_index_table.upsert({'Id':package_info.id, 'Name':package_info.name}, index_q['Id'] == package_info.id)
         logger.debug('Processing child components now...')
-        comp_table = db.table('Components')
-        for name, comp in pkg._components.iteritems():
-            self.component_manager.register(comp.id, comp, pkg)
+        for name, component in package_info.components.items():
+            self.component_manager.register(component.id, component, package_info)
         return True
 
 class ArchiveManager(object):
-    """Docstring for ArchiveManager. """
+    """ArchiveManager maintains all the packages which are available on local system in compressed/zip state
+
+    Note: This is an singleton class and is shared among other objects
+    """
+    __single_archive_manager = None
+
+    def __new__(cls, *args, **kwargs):
+        """Class instance creator
+        """
+        if cls != type(cls.__single_archive_manager):
+            cls.__single_archive_manager = object.__new__(cls, *args, **kwargs)
+        return cls.__single_archive_manager
+
     def __init__(self, conf_path):
         """TODO: to be defined1. """
         self.id = uuid.uuid4()

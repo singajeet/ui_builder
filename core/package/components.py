@@ -119,7 +119,7 @@ class ComponentManager(object):
         comp_idx_q = Query()
         comp_idx = comp_idx_table.upsert({'Id':component_obj.id, 'Name':component_obj.name, 'Package_Id':parent_pkg.id, 'Package_Name':parent_pkg.name}, comp_idx_q['Id'] == component_obj.id)
         return True
-        
+
 
 class ComponentInfo(BaseComponentInfo):
     """Represents an component in package management system. A component is an object which can contain logic (in form of code),
