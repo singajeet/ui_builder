@@ -1,5 +1,5 @@
 """
-.. module:: package_commands
+.. module:: service
    :platform: Unix, Windows
    :synopsis: Package management functionality
 
@@ -139,9 +139,9 @@ class PackageInfo(object):
             self.package_dependencies = self.conf_file.items('PackageDependencies') if self.conf_file.has_section('PackageDependencies') else {}
             logger.info('Package details loaded successfully...{0}'.format(self.name))
             logger.debug('Registring child components now...')
-            self.__load_child_comp_config()
+            self.__load_component_install_config()
 
-    def __load_child_comp_config(self):
+    def __load_component_install_config(self):
         """Load details about all components which exists in this package
         """
         if self.__comp_name_list is None:
@@ -150,7 +150,7 @@ class PackageInfo(object):
             for comp_name in self.__comp_name_list:
                 comp_path = os.path.join(self.location, comp_name.strip())
                 comp = ComponentInfo(comp_name.strip(), comp_path)
-                comp.parent_id = self.id 
+                comp.parent_id = self.id
                 comp.load_install_config()
                 self.__components[comp_name] = comp
                 self.__comp_name_id_map[comp.id] = comp_name
@@ -242,44 +242,151 @@ class PackageInfo(object):
 
 
 class PackageIndexManager(object):
-    """Provides indexing functionality of packages in all of the package sources """
+    """Provides indexing functionality of packages in all of the package sources.
+
+    Note:
+        This is an singleton class and will be
+        shared between objects
+    """
 
     __single_package_index_manager = None
 
     def __new__(cls, *args, **kwargs):
-        """Class instance creator
+        """Singleton object creator
         """
         if cls != type(cls.__single_package_index_manager):
             cls.__single_package_index_manager = object.__new__(cls, *args, **kwargs)
         return cls.__single_package_index_manager
     def __init__(self, db_connection):
-        """TODO: to be defined1. """
-       
-    def get_package_list(self):
-        """TODO: Docstring for get_package_list.
-        :returns: TODO
+        """Initialize :class:`PackageIndexManager` class
 
+        Args:
+            db_connection (object): An open connection to metadata database
         """
-        pass
+        self.__db_connection = db_connection
+        self._sources_table = db_connection.table('PackageSource')
+        self.__package_sources = self.get_all_sources()
+        self.__package_index_registry = {}
+        if len(self.__package_sources) <= 0:
+            warnings.warn('No package source are configured. :class:`PackageManager` will not be able to download any packages')
+        else:
+            for source_name, source in self.__package_sources.items():
+                if source.is_list_valid:
+                    self.__package_index_registry[source.name] = source.get_cached_package_index()
+                else:
+                    self.__package_index_registry[source.name] = source.get_package_index()
 
     def get_all_sources(self):
-        """TODO: Docstring for get_all_sources.
-        :returns: TODO
+        """Returns an list of :class:`PackageSource` configured in current system
 
+        Returns:
+            sources (PackageSource): list of all sources configured
         """
-        pass
+        _sources = {}
+        if self._sources_table is not None:
+            for source in self._sources_table.all():
+                _sources[source.name] = PackageSource(source)
+        return _sources
+
+    def add_web_source(self, name, uri, username=None, password=None):
+        """Add an new source system of type web
+        Args:
+            name (str): Name of the source
+            uri (str): Url of the new source
+            username (str): Username to access source url (optional)
+            password (str): Password to access source url (optional)
+
+        Returns:
+            status (bool): True or False
+            message (str): Failure reason
+        """
+        if self._sources_table is not None:
+            src_record = self._sources_table.get(Query()['Name'] == name)
+            if len(src_record) > 0:
+                return (False, 'A source with similar name already exists...{0}'.format(name))
+            result = self._sources_table.insert({'Name': name, 'Uri': uri, 'Username': username, 'Password': password, 'Type': 'Web', 'ModifiedOn': None, 'ModifiedBy': None, 'SecurityId': None})
+            if result is None or len(result) == 0:
+                return (False, 'Not able to save new source of type web')
+            else:
+                return (True, 'Source added successfully - {0}'.format(result))
+
+    def add_file_system_source(self, name, uri, username=None, password=None):
+        """Add an new source system of type file system
+        Args:
+            name (str): Name of the source
+            uri (str): Path to the folder on local file system
+            username (str): Username to access source folder (optional)
+            password (str): Password to access source folder (optional)
+
+        Returns:
+            status (bool): True or False
+            message (str): Failure reason
+        """
+        if self._sources_table is not None:
+            src_record = self._sources_table.get(Query()['Name'] == name)
+            if len(src_record) > 0:
+                return (False, 'A source with similar name already exists...{0}'.format(name))
+            result = self._sources_table.insert({'Name': name, 'Uri': uri, 'Username': username, 'Password': password, 'Type': 'FileSystem', 'ModifiedOn': None, 'ModifiedBy': None, 'SecurityId': None})
+            if result is None or len(result) == 0:
+                return (False, 'Not able to save new source of type FileSystem')
+            else:
+                return (True, 'Source added successfully - {0}'.format(result))
+
+    def remove_source(self, source_name):
+        """Removes source from system
+
+        Args:
+            source_name (str): Name of source that needs to be removed
+
+        Returns:
+            status (bool): True or False
+            message (str): Reason for failurer
+        """
+        if source_name is not None:
+            result = self._sources_table.remove(Query()['Name'] == source_name)
+        if resukt is None or len(result) <= 0:
+            return (False, 'Can''t delete source from the system')
+        else:
+            return (True, 'Source has been deleted - {0}'.format(result))
+
+    def __update_package_list(self, source_name):
+        """This function will fetch a list of all packages under an source
+
+        Args:
+            source_name (str): Name of packagesource
+        """
+        if self.__package_sources.__contains__(source_name):
+            _source = self.__package_sources[source_name]
+            if _source.is_list_valid:
+                self.__package_index_registry[source_name] = _source.get_cached_package_index()
+            else:
+                self.__package_index_registry[source_name] = _source.get_package_index()
+            if len(self.__package_index_registry[source_name]) <= 0:
+                return (False, 'No package index found in this source')
+            return (True, source_name)
+        else:
+            return (False, 'No such source is configured...{0}'.format(source_name))
+
+    def get_package_list(self, refresh=False):
+        """Returns an list of all packages either from cache or downloading it from source
+        """
+        if refresh == True:
+            for source_name, source in self.__package_sources.items():
+                self.__update_package_list(source.name)
+        return self.__package_index_registry
 
     def find_package(self, package_name):
-        """TODO: Docstring for find_package.
-
-        :package_namearg1: TODO
-        :returns: TODO
-
+        """Finds an package in the index repository
         """
-        pass
+        if package_name is not None:
+            for source_name, source in self.__package_sources.items():
+                if self.__package_index_registry[source.name].__contains__(package_name):
+                    return (True, self.__package_index_registry[source.name][package_name], '')
+            return (False, None, 'No such package found...{0}'.format(package_name))
+        return (False, None, 'Can''t accept blank value for package name')
 
 class PackageManager(object):
-    
+
     __single_package_manager = None
 
     def __new__(cls, *args, **kwargs):
@@ -394,17 +501,17 @@ class PackageManager(object):
     def __get_package_file(self, package_name):
         """Gets the physical package file from drop-in location, archive cache, index manager or download from source.
             Following workflow will be used to get the package file
-        
+
             1. Request package from :class:`ArchiveManager`-
                 1.1. If available in archive cache, ArchiveManager will return it for installation
                 1.2. :class:`PackageManager` will forward the package to :class:`PackageInstaller` for further installation
             2. If not found in cache, the request will be forwarded to :class:`PackageIndexManager` to find the source of package
                 2.1. If found in index, an instance of :class:`PackageSource` and request will be forwarded to :class:`PackageDownloader`
                      to download package from respective source
-                2.2. Once downloaded, request will goto :class:`PackageInstaller` for installation after package unarchived 
+                2.2. Once downloaded, request will goto :class:`PackageInstaller` for installation after package unarchived
                      by :class:`ArchiveManager`
                 2.3. After installation, :class:`ArchiveManager` and :class:`PackageManager` will update its respective cache
-            3. If not found in local index, an 'index refresh' request will be generated and process will start again 
+            3. If not found in local index, an 'index refresh' request will be generated and process will start again
                from step '2' (once the index is refreshed)
 
         Args:
@@ -460,7 +567,7 @@ class PackageManager(object):
             #[Place Holder for Step 3.1] - Call PackageManager.index_refresh()
             #Step 3.2 - Start process again from step 2
             _package_file = self.__get_package_file(package_name)
-            
+
         #Install the package if found
         if _package_file is not None:
             _status = self.installer.install_package(package_name, _package_file)
@@ -778,8 +885,8 @@ class PackageDownloader(object):
             raise Exception('Source and Package names can''t be null')
 
 class PackageInstaller(object):
-    """Installs the package on local system. This class interacts with :class:`PackageDownloader` 
-        or :class:`ArchiveManager` to complete its operation 
+    """Installs the package on local system. This class interacts with :class:`PackageDownloader`
+        or :class:`ArchiveManager` to complete its operation
     """
 
     __single_package_installer = None
