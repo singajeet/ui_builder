@@ -288,41 +288,36 @@ class PackageIndexManager(object):
                 _sources[source.name] = PackageSource(source)
         return _sources
 
-    def add_web_source(self, name, uri, username=None, password=None):
-        """Add an new source system of type web
+    def add_source(self, name, uri, username=None, password=None, src_type='Web'):
+        """Add an new source system
         Args:
             name (str): Name of the source
-            uri (str): Url of the new source
-            username (str): Username to access source url (optional)
-            password (str): Password to access source url (optional)
+            uri (str): Uri of the new source i.e., url or folder path
+            username (str): Username to access source uri (optional)
+            password (str): Password to access source uri (optional)
+            src_type (str): Type of the source - Web, FileSystem, etc
 
         Returns:
             status (bool): True or False
             message (str): Failure reason
         """
-        if self._sources_table is not None:
-            src_record = self._sources_table.get(Query()['Name'] == name)
-            if len(src_record) > 0:
-                return (False, 'A source with similar name already exists...{0}'.format(name))
-            result = self._sources_table.insert({'Name': name, 'Uri': uri, 'Username': username, 'Password': password, 'Type': 'Web', 'ModifiedOn': None, 'ModifiedBy': None, 'SecurityId': None})
-            if result is None or len(result) == 0:
-                return (False, 'Not able to save new source of type web')
-            else:
-                return (True, 'Source added successfully - {0}'.format(result))
+        new_source = PackageSource(name, uri, username, password, src_type, None, None, None)
+        status = new_source.save()
+        if status is not None and 
 
-    def add_file_system_source(self, name, uri, username=None, password=None):
-        """Add an new source system of type file system
+    def update_source(self, name, uri, username=None, password=None):
+        """Update an source system
         Args:
             name (str): Name of the source
-            uri (str): Path to the folder on local file system
-            username (str): Username to access source folder (optional)
-            password (str): Password to access source folder (optional)
-
+            uri (str): Uri of source system
+            username (str): Username to access source uri (optional)
+            password (str): Password to access source uri (optional)
+            src_type (str): Type of the source - Web, FileSystem, etc
         Returns:
             status (bool): True or False
             message (str): Failure reason
         """
-        if self._sources_table is not None:
+        if self._sources_table is not None and len(self.__package_sources) > 0:
             src_record = self._sources_table.get(Query()['Name'] == name)
             if len(src_record) > 0:
                 return (False, 'A source with similar name already exists...{0}'.format(name))
