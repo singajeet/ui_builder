@@ -240,7 +240,6 @@ class PackageInfo(object):
         else:
             return None
 
-
 class PackageIndexManager(object):
     """Provides indexing functionality of packages in all of the package sources.
 
@@ -257,6 +256,7 @@ class PackageIndexManager(object):
         if cls != type(cls.__single_package_index_manager):
             cls.__single_package_index_manager = object.__new__(cls, *args, **kwargs)
         return cls.__single_package_index_manager
+
     def __init__(self, db_connection):
         """Initialize :class:`PackageIndexManager` class
 
@@ -285,10 +285,10 @@ class PackageIndexManager(object):
         _sources = {}
         if self._sources_table is not None:
             for source in self._sources_table.all():
-                _sources[source.name] = PackageSource(source)
+                _sources[source.name] = PackageSource(source.name)
         return _sources
 
-    def add_source(self, name, uri, username=None, password=None, src_type='Web'):
+    def add_source(self, name, uri, username=None, password=None, src_type='Web', modified_on=None, modified_by=None, security_id=None):
         """Add an new source system
         Args:
             name (str): Name of the source
@@ -296,23 +296,26 @@ class PackageIndexManager(object):
             username (str): Username to access source uri (optional)
             password (str): Password to access source uri (optional)
             src_type (str): Type of the source - Web, FileSystem, etc
-
+            modified_on (date): Datetime when new source is added
+            modified_by (str): Name of the user who added the source
+            security_id (uuid): The security rules applied to this source
         Returns:
             status (bool): True or False
             message (str): Failure reason
         """
-        new_source = PackageSource(name, uri, username, password, src_type, None, None, None)
+        new_source = PackageSource(name, uri, username, password, src_type, modified_on, modified_by, security_id)
         status = new_source.save()
-        if status is not None and 
+        if status is not None and status[0] == True:
+            self.__package_sources[name] = new_source
+            self.__update_package_list(name)
+        return status
 
-    def update_source(self, name, uri, username=None, password=None):
+    def update_source(self, name, attribute_name, value=None):
         """Update an source system
         Args:
             name (str): Name of the source
-            uri (str): Uri of source system
-            username (str): Username to access source uri (optional)
-            password (str): Password to access source uri (optional)
-            src_type (str): Type of the source - Web, FileSystem, etc
+            attribute_name (str): Name of the attribute that needs to be updated
+            value (str): New value of the attribute to be updated
         Returns:
             status (bool): True or False
             message (str): Failure reason
@@ -320,12 +323,15 @@ class PackageIndexManager(object):
         if self._sources_table is not None and len(self.__package_sources) > 0:
             src_record = self._sources_table.get(Query()['Name'] == name)
             if len(src_record) > 0:
-                return (False, 'A source with similar name already exists...{0}'.format(name))
-            result = self._sources_table.insert({'Name': name, 'Uri': uri, 'Username': username, 'Password': password, 'Type': 'FileSystem', 'ModifiedOn': None, 'ModifiedBy': None, 'SecurityId': None})
-            if result is None or len(result) == 0:
-                return (False, 'Not able to save new source of type FileSystem')
+                result = src_record.update({attribute_name: value}, tinydb.Query()['Name'] == name)
+                if result is not None and len(result) > 0:
+                    return (True, name)
+                else:
+                    return (False, 'Unable to update the provided attribute {0} of source {1}'.format(attribute_name, name))
             else:
-                return (True, 'Source added successfully - {0}'.format(result))
+                return (False, 'Can''t find source {0} in currently configured sources'.format(name))
+        else:
+            return (False, 'Either the source table is not initialized or no sources are configured yet')
 
     def remove_source(self, source_name):
         """Removes source from system
@@ -364,6 +370,9 @@ class PackageIndexManager(object):
 
     def get_package_list(self, refresh=False):
         """Returns an list of all packages either from cache or downloading it from source
+
+        Args:
+            refresh (bool): Whether to have package indexes refreshed before returning the index list (default=False)
         """
         if refresh == True:
             for source_name, source in self.__package_sources.items():
@@ -372,6 +381,9 @@ class PackageIndexManager(object):
 
     def find_package(self, package_name):
         """Finds an package in the index repository
+
+        Args:
+            package_name (str): Name of the package that needs to be searched
         """
         if package_name is not None:
             for source_name, source in self.__package_sources.items():
@@ -381,7 +393,6 @@ class PackageIndexManager(object):
         return (False, None, 'Can''t accept blank value for package name')
 
 class PackageManager(object):
-
     __single_package_manager = None
 
     def __new__(cls, *args, **kwargs):
