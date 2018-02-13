@@ -20,11 +20,13 @@ import pathlib
 import importlib
 import inspect
 import asyncio
+import aiohttp
 import warnings
 from goldfinch import validFileName
 from tinydb import TinyDB, Query, where
 from ui_builder.core.package import package_commands, components
 from ui_builder.core.io import filesystem
+from ui_builder.core.provider import tasks
 
 #init logs ----------------------------
 init_log.config_logs()
@@ -267,14 +269,29 @@ class PackageIndexManager(object):
         self._sources_table = db_connection.table('PackageSource')
         self.__package_sources = self.get_all_sources()
         self.__package_index_registry = {}
+        self.__source_validity_status = {}
+        self.__get_index_thread = None
         if len(self.__package_sources) <= 0:
             warnings.warn('No package source are configured. :class:`PackageManager` will not be able to download any packages')
         else:
-            for source_name, source in self.__package_sources.items():
-                if source.is_list_valid:
-                    self.__package_index_registry[source.name] = source.get_cached_package_index()
-                else:
-                    self.__package_index_registry[source.name] = source.get_package_index()
+            self.__update_package_list()
+
+    async def __get_index(self, source):
+        """docstring for get_package_index_async"""
+        return await source.get_package_index()
+
+    def __update_index_callback(self, results, _type):
+        """This function will be called once all coroutines :func:`__get_index` are done. This callback will receive a list of results in random order as a tuple of two elements (source-name, source-index-list)
+
+        Args:
+            results (list): A 2 element tuple list
+        """
+        for result in results:
+            _name = result[0]
+            _source_index = result[1]
+            self.__package_index_registry[_name] = _source_index
+        if self.__get_index_thread is not None:
+            self.__get_index_thread = None
 
     def get_all_sources(self):
         """Returns an list of :class:`PackageSource` configured in current system
@@ -307,7 +324,6 @@ class PackageIndexManager(object):
         status = new_source.save()
         if status is not None and status[0] == True:
             self.__package_sources[name] = new_source
-            self.__update_package_list(name)
         return status
 
     def update_source(self, name, attribute_name, value=None):
@@ -321,17 +337,11 @@ class PackageIndexManager(object):
             message (str): Failure reason
         """
         if self._sources_table is not None and len(self.__package_sources) > 0:
-            src_record = self._sources_table.get(Query()['Name'] == name)
-            if len(src_record) > 0:
-                result = src_record.update({attribute_name: value}, tinydb.Query()['Name'] == name)
-                if result is not None and len(result) > 0:
-                    return (True, name)
-                else:
-                    return (False, 'Unable to update the provided attribute {0} of source {1}'.format(attribute_name, name))
-            else:
-                return (False, 'Can''t find source {0} in currently configured sources'.format(name))
+            src_record = self.__package_sources[name]
+            _result = src_record.update(attribute_name, value)
+            return _result
         else:
-            return (False, 'Either the source table is not initialized or no sources are configured yet')
+            return (False, 'No package source are yet configured')
 
     def remove_source(self, source_name):
         """Removes source from system
@@ -345,28 +355,51 @@ class PackageIndexManager(object):
         """
         if source_name is not None:
             result = self._sources_table.remove(Query()['Name'] == source_name)
-        if resukt is None or len(result) <= 0:
+        if result is None or len(result) <= 0:
             return (False, 'Can''t delete source from the system')
         else:
             return (True, 'Source has been deleted - {0}'.format(result))
 
-    def __update_package_list(self, source_name):
-        """This function will fetch a list of all packages under an source
+    async def __get_validity_status(self, source):
+        """docstring for get_validity_status"""
+        return await source.get_validity_status()
+
+    def __validity_status_callback(self, results, _type):
+        """Will be called once all :func:`__get_validity_status` coroutines are done
 
         Args:
-            source_name (str): Name of packagesource
+            results (list): A list of two elements tuple
+                                -[0] (str): source name
+                                -[1] (bool): valid or not valid
         """
-        if self.__package_sources.__contains__(source_name):
-            _source = self.__package_sources[source_name]
-            if _source.is_list_valid:
-                self.__package_index_registry[source_name] = _source.get_cached_package_index()
-            else:
-                self.__package_index_registry[source_name] = _source.get_package_index()
-            if len(self.__package_index_registry[source_name]) <= 0:
-                return (False, 'No package index found in this source')
-            return (True, source_name)
-        else:
-            return (False, 'No such source is configured...{0}'.format(source_name))
+        for result in results:
+            _src_name = result[0]
+            _is_src_valid = result[1]
+            self.__source_validity_status[_src_name] = _is_src_valid
+        if self.__get_index_thread is not None:
+            self.__get_index_thread = None
+
+    def __update_package_list(self):
+        """This function will fetch a list of all packages under an source
+        """
+        if len(self.__package_sources) > 0:
+            self.__get_index_thread = tasks.HybridThread(name='SourceValidityCheck', notify_on_all_done=self.__validity_status_callback)
+            for source_name, source in self.__package_sources.items():
+                self.__get_index_thread.add_coroutine(self.__get_validity_status, source)
+            self.__get_index_thread.start_forever()
+            #Will wait for coroutines to finish as we need it for next step
+            self.__get_index_thread.join()
+            #Step2
+            for source_name, is_valid in self.__source_validity_status.items():
+                if is_valid:
+                    self.__package_index_registry[source_name] = self.__package_sources[source_name].get_cached_package_index()
+            #Step3
+            self.__get_index_thread = tasks.HybridThread(name='FetchPackageIndex', notify_on_all_done=self.__update_index_callback)
+            for source_name, is_valid in self.__source_validity_status.items():
+                if not is_valid:
+                    self.__get_index_thread.add_coroutine(self.__get_index, self.__package_sources[source_name])
+                self.__get_index_thread.start_forever()
+                #No need to wait here as calling thread will handle it
 
     def get_package_list(self, refresh=False):
         """Returns an list of all packages either from cache or downloading it from source
@@ -375,8 +408,10 @@ class PackageIndexManager(object):
             refresh (bool): Whether to have package indexes refreshed before returning the index list (default=False)
         """
         if refresh == True:
-            for source_name, source in self.__package_sources.items():
-                self.__update_package_list(source.name)
+            self.__update_package_list()
+            if self.__get_index_thread is not None:
+                #wait for coroutines to finish
+                self.__get_index_thread.join()
         return self.__package_index_registry
 
     def find_package(self, package_name):
@@ -740,21 +775,126 @@ class PackageManager(object):
             raise Exception('No such package found...{0}'.format(package_name))
 
 class PackageSource(object):
-    """Docstring for PackageSource. """
+    """Represents an package source in package management system
+    """
+    SESSION = aiohttp.ClientSession()
 
-    def __init__(self):
-        """TODO: to be defined1. """
-        self.source_name = None
-        self.source_type = PackageSource.DEFAULT
-        self.uri = None
-        self.auth_type = None
+    def __init__(self, db_connection, name, uri=None, username=None, password=None, src_type=None, modified_on=None, modified_by=None, security_id=None):
+        """Creates new source or load existing source
 
-    def check_source(self):
-        """TODO: Docstring for check_source.
-        :returns: TODO
-
+        Args:
+            db_connection (object): An open connection to metadata db
+            name (str): Name of package source
+            uri (str): A web path or file system path to the source index
+            username (str): Username to access source
+            password (str): Password for accessing source
+            src_type (str): Web or Filesystem
+            modified_on: Modified on date time
+            modified_by: Name of user who havemodified it
+            security_id (uuid): Id of security principle
         """
-        pass
+        self.name = name
+        self.__details = {
+            'Name' : name,
+            'Uri' : uri,
+            'Username' : username,
+            'Password' : password,
+            'Src_type' : src_type,
+            'Modified_On' : modified_on,
+            'Modified_By' : modified_by,
+            'Security_Id' : security_id
+        }
+        self.__db_connection = db_connection
+        self.__source_table = self.__db_connection.table('PackageSource')
+        self.__details = self.__source_table.get(Query()['Name'] == name)
+        self.__index_list = {}
+
+    def name():
+        doc = "The name property."
+        def fget(self):
+            return self._name
+        def fset(self, value):
+            self._name = value
+        def fdel(self):
+            del self._name
+        return locals()
+    name = property(**name())
+
+    def uri():
+        doc = "The uri property."
+        def fget(self):
+            return self.__details['Uri']
+        return locals()
+    uri = property(**uri())
+
+    def username():
+        doc = "The username property."
+        def fget(self):
+            return self.__details['Username']
+        return locals()
+    username = property(**username())
+
+    def src_type():
+        doc = "The src_type property."
+        def fget(self):
+            return self.__details['Src_type']
+        return locals()
+    src_type = property(**src_type())
+
+    def security_id():
+        doc = "The security_id property."
+        def fget(self):
+            return self.__details['Security_id']
+        return locals()
+    security_id = property(**security_id())
+
+    def save(self):
+        """Creates a new package source record and saves it in database
+        """
+        _result = self.__source_table.insert(self.__details)
+        if len(_result) > 0:
+            return (True, _result)
+        else:
+            return (False, 'Unable to save package source')
+
+    def update(self, attribute_name, value):
+        """Update current sources attribute with new value
+
+        Args:
+            attribute_name (str): Name of the attribute that needs to be updated
+            value (str): New value that needs to be updated
+
+        Returns:
+            status (bool): True or False
+            message (str): Failure reasons
+        """
+        self.__details[attribute_name] = value
+        _result = self.__source_table.update(self.__details, Query()['Name'] == self.name)
+        if len(_result) > 0:
+            return (True, _result)
+        else:
+            return (False, 'Unable to update attribute {0} with new value {1}'.format(attribute_name, value))
+
+    async def get_package_index(self):
+        """Downloads package index from configured source uri
+
+        Returns:
+            package_index (json): Package index dict
+        """
+        async with PackageSource.SESSION.get(self.__details['Uri'], params={'action': 'index'}) as _response:
+            await _response.json()
+
+    async def get_validity_status(self):
+        """docstring for get_validity_status"""
+
+    def get_cached_package_index(self):
+        """Returns the current package index which was already downloaded
+            in previous requests
+
+        Returns:
+            index (dict): Returns an dict of package names, version and dependencies
+        """
+        return self.__index_list
 
     async def download(self, pkg, to):
         """TODO: Docstring for download.
@@ -765,30 +905,6 @@ class PackageSource(object):
         """
         return 'SUCCESS'
 
-    async def list(self):
-        """TODO: Docstring for list.
-        :returns: TODO
-
-        """
-        pass
-
-    def package_details(self, package_name):
-        """TODO: Docstring for package_details.
-
-        :package_name: TODO
-        :returns: TODO
-
-        """
-        pass
-
-    async def find_package(self, package_name):
-        """TODO: Docstring for find_package.
-
-        :package_name: TODO
-        :returns: TODO
-
-        """
-        pass
 
 class PackageDownloader(object):
     """Docstring for PackageDownloader. """
