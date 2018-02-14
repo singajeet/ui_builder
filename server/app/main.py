@@ -16,7 +16,8 @@ def setup_routes(app):
     app.router.add_get('/', index, name='index')
     app.router.add_route('*', '/messages', messages, name='messages')
     app.router.add_get('/messages/data', message_data, name='message-data')
-    app.router.add_get('/package', package_handler, name='package-handler')
+    _resource = app.router.add_resource('/package', name='package-handler')
+    _resource.add_route('GET', package_handler)
 
 
 def create_app():
