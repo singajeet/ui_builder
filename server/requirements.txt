@@ -1,0 +1,6 @@
+# you will need to install these requirements with `pip install -r requirements.txt`
+aiohttp-jinja2==0.15.0
+aiohttp==3.0.1
+pytest-aiohttp==0.3.0
+pytest-cov==2.5.1
+pytest==3.4.0

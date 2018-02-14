@@ -936,7 +936,7 @@ class PackageSource(object):
         Args:
             package_name (str): Name of the package that needs to be downloaded
         """
-        async with PackageSource.SESSION.get(self.__details['Uri'], params={'PackageName' : package_name, 'Action':'Download'}) as _response:
+        async with PackageSource.SESSION.get(self.__details['Uri'], params={'package_name' : package_name, 'action':'download'}) as _response:
             with open('{0}/{1}.pkg'.format(self.__download_location, package_name), 'wb') as fd:
                 while True:
                     chunk = _response.content.read(self.__chunk_size)
