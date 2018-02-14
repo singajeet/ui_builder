@@ -2,6 +2,7 @@ from datetime import datetime
 import asyncio
 from aiohttp.hdrs import METH_POST
 from aiohttp.web import json_response
+from aiohttp.web import StreamResponse, Response
 from aiohttp.web_exceptions import HTTPFound
 from aiohttp_jinja2 import template
 
@@ -62,22 +63,37 @@ async def messages(request):
 
 async def package_handler(request):
     """docstring for package_handler"""
-    data = await request.get()
-    action = data.get('action')
+    _response = StreamResponse()
+    action = request.match_info.get('action', None)
     if action is not None:
         if action == 'index':
             return await _package_index()
         elif action == 'count':
-            local_index_count = request.get('local_index')
+            local_index_count = request.match_info.get('local_index', '0')
             if local_index_count is not None:
                 server_index_count = '2'
                 if local_index_count == server_index_count:
-                    return True
+                    return json_response({'result':'True'})
                 else:
-                    return False
+                    return json_response({'result':'False'})
         elif action == 'download':
-            package_name = data.get('package_name')
-            return json_response({'download':'success'})
+            package_name = request.match_info.get('package_name', 'NA')
+            return Response(body='Download for package <a href=#>{0}</a> will start soon'.format(package_name))
+        else:
+            return Response(body='Invalid value provided for parameter "action"')
+    else:
+        _ahref_index = '<li>Get package <a href="/message?action=index">Index</a></li>'
+        _ahref_count = '<li>Get package <a href="/message?action=count&local_index={0}">count</a></li>'.format('2')
+        _ahref_download = '<li>Get <a href="/message?action=download&package_name={0}">{1}</a></li>'.format('package1','Package1')
+        _list = '<div><ul>{0}{1}{2}</ul></div>'.format(_ahref_index, _ahref_count, _ahref_download)
+        _message = '<center><div>Welcome to package index service. You have below options to work with this service:</div></center><div/><div/>{0}'.format(_list)
+        h_body = '<html><head><title>PackageService</title></head><body>{0}</body></html>'.format(_message)
+        _response.content_length = len(h_body)
+        _response.content_type = 'text/html'
+        binary = h_body.encode('utf8')
+        await _response.prepare(request)
+        _response.write(binary)
+        return _response
 
 async def _package_index():
     """docstring for _package_index"""
