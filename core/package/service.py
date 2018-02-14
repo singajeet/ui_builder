@@ -46,9 +46,7 @@ class PackageInfo(object):
             config_file_path (str): Location of the package on the local file system where package is installed
         """
         if config_file_path is not None:
-            config_file_path = pathlib.Path(config_file_path).absolute() 
-                                if config_file_path.find('~') < 0 
-                                else pathlib.Path(config_file_path).expanduser()
+            config_file_path = pathlib.Path(config_file_path).absolute() if config_file_path.find('~') < 0 else pathlib.Path(config_file_path).expanduser()
         else:
             raise Exception('Path to config file can''t be none')
         self.id = None
@@ -140,8 +138,7 @@ class PackageInfo(object):
             self.version = self.config_file.get_or_none('Details', 'Version')
             self.company = self.config_file.get_or_none('Details', 'Company')
             self.__comp_name_list = self.config_file.get_or_none('Details', 'Components').split(',')
-            self.package_dependencies = self.conf_file.items('PackageDependencies') 
-                                            if self.conf_file.has_section('PackageDependencies') else {}
+            self.package_dependencies = self.conf_file.items('PackageDependencies') if self.conf_file.has_section('PackageDependencies') else {}
             logger.info('Package details loaded successfully...{0}'.format(self.name))
             logger.debug('Registring child components now...')
             self.__load_component_install_config()
@@ -279,14 +276,13 @@ class PackageIndexManager(object):
         else:
             self.__update_package_list()
 
-    def __common_callback(self, results, _type):
-        """TODO: Docstring for __common_callback.
-
-        :results: TODO
-        :returns: TODO
-
+    def __common_callback(self, results, owner, _type):
+        """The common coroutine callback, which will be called on completion of all coroutines with owner as one of the parameters
         """
-        pass
+        if owner == 'ValidityStatusCheck':
+            self.__validity_status_callback(results, _type)
+        elif owner == 'FetchIndex':
+            self.__update_index_callback(result, _type)
 
     async def __get_index(self, source):
         """Coroutine to get the index from source using async request
@@ -297,7 +293,7 @@ class PackageIndexManager(object):
         return await source.get_package_index()
 
     def __update_index_callback(self, results, _type):
-        """This function will be called once all coroutines :func:`__get_index` are done. 
+        """This function will be called once all coroutines :func:`__get_index` are done.
             This callback will receive a list of results in random order as a tuple of two elements (source-name, source-index-list)
 
         Args:
@@ -402,7 +398,7 @@ class PackageIndexManager(object):
         """
         if len(self.__package_sources) > 0:
             #Step1 - Get validity status of all current sources configured
-            self.__get_index_thread.set_owner('ValidityStatusCheck') 
+            self.__get_index_thread.set_owner('ValidityStatusCheck')
             for source_name, source in self.__package_sources.items():
                 self.__get_index_thread.add_coroutine(self.__get_validity_status, source)
             self.__get_index_thread.start_forever()
@@ -745,7 +741,7 @@ class PackageManager(object):
 
     def list_packages(self):
         """
-         Provides an list of all installed packages 
+         Provides an list of all installed packages
         """
         return self.package_index_manager.get_package_list()
 
@@ -826,8 +822,15 @@ class PackageSource(object):
         }
         self.__db_connection = db_connection
         self.__source_table = self.__db_connection.table('PackageSource')
-        self.__details = self.__source_table.get(Query()['Name'] == name)
+        _details_in_db={}
+        if self.__source_table is not None:
+            _details_in_db = self.__source_table.get(Query()['Name'] == name)
+            if len(_details_in_db) > 0:
+                self.__details = _details_in_db
+        self.__index_table = self.__db_connection.table('PackageIndex')
         self.__index_list = {}
+        if self.__index_table is not None:
+            self.__index_list = self.__index_table.get(Query()['Name'] == name)
 
     def name():
         doc = "The name property."
@@ -871,7 +874,11 @@ class PackageSource(object):
     def save(self):
         """Creates a new package source record and saves it in database
         """
-        _result = self.__source_table.insert(self.__details)
+        src_count = self.__source_table.count(Query()['Name'] == self.name)
+        if src_count <= 0:
+            _result = self.__source_table.insert(self.__details)
+        else:
+            return (False, 'A source with same name already exists - {0}'.format(self.name))
         if len(_result) > 0:
             return (True, _result)
         else:
@@ -902,10 +909,17 @@ class PackageSource(object):
             package_index (json): Package index dict
         """
         async with PackageSource.SESSION.get(self.__details['Uri'], params={'action': 'index'}) as _response:
-            await _response.json()
+            self.__index_list = await _response.json()
+            return self.__index_list
 
     async def get_validity_status(self):
-        """docstring for get_validity_status"""
+        """Returns the validity of package index such that if count of package index in source and :attr:`__index_list` matches, it returns True else False
+
+        Returns:
+            validity_status (bool): Returns True if count match else False
+        """
+        async with PackageSource.SESSION.get(self.__details['Uri'], params = {'action': 'count', 'local_index':len(self.__index_list)}) as _response:
+            return await _response.json()
 
     def get_cached_package_index(self):
         """Returns the current package index which was already downloaded
@@ -916,14 +930,21 @@ class PackageSource(object):
         """
         return self.__index_list
 
-    async def download(self, pkg, to):
-        """TODO: Docstring for download.
+    async def download(self, package_name):
+        """Downloads the package from source and returns the content to caller of this coroutine
 
-        :to: TODO
-        :returns: TODO
-
+        Args:
+            package_name (str): Name of the package that needs to be downloaded
         """
-        return 'SUCCESS'
+        async with PackageSource.SESSION.get(self.__details['Uri'], params={'PackageName' : package_name, 'Action':'Download'}) as _response:
+            with open('{0}/{1}.pkg'.format(self.__download_location, package_name), 'wb') as fd:
+                while True:
+                    chunk = _response.content.read(self.__chunk_size)
+                    if not chunk:
+                        break
+                    fd.write(chunk)
+            return pathlib.Path('{0}/{1}.pkg'.format(self.__download_location, package_name))
+        return None
 
 class PackageDownloader(object):
     """Docstring for PackageDownloader. """
