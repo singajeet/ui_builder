@@ -46,7 +46,9 @@ class PackageInfo(object):
             config_file_path (str): Location of the package on the local file system where package is installed
         """
         if config_file_path is not None:
-            config_file_path = pathlib.Path(config_file_path).absolute() if config_file_path.find('~') < 0 else pathlib.Path(config_file_path).expanduser()
+            config_file_path = pathlib.Path(config_file_path).absolute() 
+                                if config_file_path.find('~') < 0 
+                                else pathlib.Path(config_file_path).expanduser()
         else:
             raise Exception('Path to config file can''t be none')
         self.id = None
@@ -138,7 +140,8 @@ class PackageInfo(object):
             self.version = self.config_file.get_or_none('Details', 'Version')
             self.company = self.config_file.get_or_none('Details', 'Company')
             self.__comp_name_list = self.config_file.get_or_none('Details', 'Components').split(',')
-            self.package_dependencies = self.conf_file.items('PackageDependencies') if self.conf_file.has_section('PackageDependencies') else {}
+            self.package_dependencies = self.conf_file.items('PackageDependencies') 
+                                            if self.conf_file.has_section('PackageDependencies') else {}
             logger.info('Package details loaded successfully...{0}'.format(self.name))
             logger.debug('Registring child components now...')
             self.__load_component_install_config()
@@ -270,21 +273,36 @@ class PackageIndexManager(object):
         self.__package_sources = self.get_all_sources()
         self.__package_index_registry = {}
         self.__source_validity_status = {}
-        self.__get_index_thread = None
+        self.__get_index_thread = tasks.HybridThread(name='PackageIndexCoroThread', notify_on_all_done=self.__common_callback)
         if len(self.__package_sources) <= 0:
             warnings.warn('No package source are configured. :class:`PackageManager` will not be able to download any packages')
         else:
             self.__update_package_list()
 
+    def __common_callback(self, results, _type):
+        """TODO: Docstring for __common_callback.
+
+        :results: TODO
+        :returns: TODO
+
+        """
+        pass
+
     async def __get_index(self, source):
-        """docstring for get_package_index_async"""
+        """Coroutine to get the index from source using async request
+
+        Args:
+            source (str): Name of the package source from where index needs to be fetched
+        """
         return await source.get_package_index()
 
     def __update_index_callback(self, results, _type):
-        """This function will be called once all coroutines :func:`__get_index` are done. This callback will receive a list of results in random order as a tuple of two elements (source-name, source-index-list)
+        """This function will be called once all coroutines :func:`__get_index` are done. 
+            This callback will receive a list of results in random order as a tuple of two elements (source-name, source-index-list)
 
         Args:
             results (list): A 2 element tuple list
+            _type (int): function or coroutine
         """
         for result in results:
             _name = result[0]
@@ -383,18 +401,20 @@ class PackageIndexManager(object):
         """This function will fetch a list of all packages under an source
         """
         if len(self.__package_sources) > 0:
-            self.__get_index_thread = tasks.HybridThread(name='SourceValidityCheck', notify_on_all_done=self.__validity_status_callback)
+            #Step1 - Get validity status of all current sources configured
+            self.__get_index_thread.set_owner('ValidityStatusCheck') 
             for source_name, source in self.__package_sources.items():
                 self.__get_index_thread.add_coroutine(self.__get_validity_status, source)
             self.__get_index_thread.start_forever()
             #Will wait for coroutines to finish as we need it for next step
-            self.__get_index_thread.join()
-            #Step2
+            self.__get_index_thread.wait_for_all_coroutines()
+            #Step2 - Get cached package index for sources having valid indexes
             for source_name, is_valid in self.__source_validity_status.items():
                 if is_valid:
                     self.__package_index_registry[source_name] = self.__package_sources[source_name].get_cached_package_index()
-            #Step3
-            self.__get_index_thread = tasks.HybridThread(name='FetchPackageIndex', notify_on_all_done=self.__update_index_callback)
+            #Step3 - Refresh cached index from source for those which are not valid
+            self.__get_index_thread.set_owner('FetchIndex')
+            self.__get_index_thread.reschedule()
             for source_name, is_valid in self.__source_validity_status.items():
                 if not is_valid:
                     self.__get_index_thread.add_coroutine(self.__get_index, self.__package_sources[source_name])
@@ -411,7 +431,7 @@ class PackageIndexManager(object):
             self.__update_package_list()
             if self.__get_index_thread is not None:
                 #wait for coroutines to finish
-                self.__get_index_thread.join()
+                self.__get_index_thread.wait_for_all_coroutines()
         return self.__package_index_registry
 
     def find_package(self, package_name):
@@ -904,7 +924,6 @@ class PackageSource(object):
 
         """
         return 'SUCCESS'
-
 
 class PackageDownloader(object):
     """Docstring for PackageDownloader. """
