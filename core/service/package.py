@@ -1,5 +1,5 @@
 """
-.. module:: service
+.. module:: package
    :platform: Unix, Windows
    :synopsis: Package management functionality
 
@@ -24,7 +24,7 @@ import aiohttp
 import warnings
 from goldfinch import validFileName
 from tinydb import TinyDB, Query, where
-from ui_builder.core.package import package_commands, components
+from ui_builder.core.service import package_commands, components
 from ui_builder.core.io import filesystem
 from ui_builder.core.provider import tasks
 
@@ -604,7 +604,7 @@ class PackageManager(object):
             package_source = self.package_index_manager.find_package(package_name)
         #Step 2.1 - Package found in index, ask :class:`PackageDownloader` to download package in :attr:`pkg_drop_location`
         if package_source[0] == True:
-            self.downloader.download(package_source[2], package_name[1])
+            self.downloader.download(package_source[1], package_name[2])
         #Step 2.2 - Get the downloaded physical package file :class:`PackageFile` from :class:`ArchiveManager`
         #[Place Holder for step 2.2]
         return _package_file
@@ -805,13 +805,66 @@ class PackageManager(object):
             raise Exception('No such package found...{0}'.format(package_name))
 
 class PackageSource(object):
+    """Base class for package source"""
+
+    def __init__(self, download_location, db_connection, name):
+        """Base constructor for package source
+        Args:
+            download_location (str): Folder location where package will be downloaded
+            db_connection (object): An open cinnection to database
+            name (str): Name of the package source
+        """
+        self.__download_location = download_location
+        self.__db_connection = db_connection
+        self.name = name
+        self.details = {}
+
+    def save(self):
+        """Saves details of package source to database
+        """
+        pass
+
+    def update(self, attribute_name, value):
+        """Update current sources attribute with new value
+        Args:
+            attribute_name (str): Name of the attribute that needs to be updated
+            value (str): New value that needs to be updated
+        Returns:
+            status (bool): True or False
+            message (str): Failure reasons
+        """
+        pass
+
+    async def get_package_index(self):
+        """Downloads package index from configured source uri
+        Returns:
+            package_index (json): Package index dict
+        """
+        pass
+
+    async def get_validity_status(self):
+        """Returns the validity of package index such that if count of package index in source and :attr:`__index_list` matches, it returns True else False
+        Returns:
+            validity_status (bool): Returns True if count match else False
+        """
+        pass
+
+    def get_cached_package_index(self):
+        """Returns the current package index which was already downloaded
+            in previous requests
+
+        Returns:
+            index (dict): Returns an dict of package names, version and dependencies
+        """
+        pass
+
+class DefaultPackageSource(PackageSource):
     """Represents an package source in package management system
     """
     SESSION = aiohttp.ClientSession()
 
     def __init__(self, download_location, db_connection, name, uri=None, username=None, password=None, src_type=None, modified_on=None, modified_by=None, security_id=None):
         """Creates new source or load existing source
-
         Args:
             download_location (str): Local folder where downloaded packages will be stored
             db_connection (object): An open connection to metadata db
@@ -883,9 +936,16 @@ class PackageSource(object):
     def security_id():
         doc = "The security_id property."
         def fget(self):
-            return self.__details['Security_id']
+            return self.__details['Security_Id']
         return locals()
     security_id = property(**security_id())
+
+    def details():
+        doc = "The details property."
+        def fget(self):
+            return self.__details
+        return locals()
+    details = property(**details())
 
     def save(self):
         """Creates a new package source record and saves it in database
@@ -902,7 +962,6 @@ class PackageSource(object):
 
     def update(self, attribute_name, value):
         """Update current sources attribute with new value
-
         Args:
             attribute_name (str): Name of the attribute that needs to be updated
             value (str): New value that needs to be updated
@@ -930,7 +989,6 @@ class PackageSource(object):
 
     async def get_validity_status(self):
         """Returns the validity of package index such that if count of package index in source and :attr:`__index_list` matches, it returns True else False
-
         Returns:
             validity_status (bool): Returns True if count match else False
         """
@@ -945,22 +1003,6 @@ class PackageSource(object):
             index (dict): Returns an dict of package names, version and dependencies
         """
         return self.__index_list
-
-    async def download(self, package_name):
-        """Downloads the package from source and returns the content to caller of this coroutine
-
-        Args:
-            package_name (str): Name of the package that needs to be downloaded
-        """
-        async with PackageSource.SESSION.get(self.__details['Uri'], params={'package_name' : package_name, 'action':'download'}) as _response:
-            with open('{0}/{1}.pkg'.format(self.__download_location, package_name), 'wb') as fd:
-                while True:
-                    chunk = _response.content.read(self.__chunk_size)
-                    if not chunk:
-                        break
-                    fd.write(chunk)
-            return pathlib.Path('{0}/{1}.pkg'.format(self.__download_location, package_name))
-        return None
 
 class PackageDownloader(object):
     """Docstring for PackageDownloader. """
@@ -994,6 +1036,21 @@ class PackageDownloader(object):
                                     obj = getattr(module, member)
                                     if inspect.isclass(obj) and issubclass(obj, PackageSource) and obj is not PackageSource:
                                         self.download_src[obj.source_name] = obj
+
+    async def download(self, package_name):
+        """Downloads the package from source and returns the content to caller of this coroutine
+        Args:
+            package_name (str): Name of the package that needs to be downloaded
+        """
+        async with PackageSource.SESSION.get(self.__details['Uri'], params={'package_name' : package_name, 'action':'download'}) as _response:
+            with open('{0}/{1}.pkg'.format(self.__download_location, package_name), 'wb') as fd:
+                while True:
+                    chunk = _response.content.read(self.__chunk_size)
+                    if not chunk:
+                        break
+                    fd.write(chunk)
+            return pathlib.Path('{0}/{1}.pkg'.format(self.__download_location, package_name))
+        return None
 
     def download(self, src_name, package_name):
         """TODO: Docstring for download.
