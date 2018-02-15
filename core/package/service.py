@@ -393,8 +393,11 @@ class PackageIndexManager(object):
         if self.__get_index_thread is not None:
             self.__get_index_thread = None
 
-    def __update_package_list(self):
+    def __update_package_list(self, percentage_completed_callback=None):
         """This function will fetch a list of all packages under an source
+
+        Args:
+            percentage_completed_callback (func): Callback will be called on updation of each package and percentage completion will be passed to callback 
         """
         if len(self.__package_sources) > 0:
             #Step1 - Get validity status of all current sources configured
@@ -402,6 +405,8 @@ class PackageIndexManager(object):
             for source_name, source in self.__package_sources.items():
                 self.__get_index_thread.add_coroutine(self.__get_validity_status, source)
             self.__get_index_thread.start_forever()
+            #return the percentage completion
+            self.__get_index_thread.update_percentage(percentage_completed_callback)
             #Will wait for coroutines to finish as we need it for next step
             self.__get_index_thread.wait_for_all_coroutines()
             #Step2 - Get cached package index for sources having valid indexes

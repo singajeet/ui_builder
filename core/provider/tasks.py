@@ -69,6 +69,7 @@ class HybridThread(threading.Thread):
         self.__function_futures = []
         self.__notify_on_all_done = notify_on_all_done
         self.__notify_on_coroutine_done = notify_on_coroutine_done
+        self.__update_percentage_callback = None
         self.__notify_on_function_done = notify_on_function_done
         self.__coroutine_counter = 0
         self.__function_counter = 0
@@ -117,6 +118,22 @@ class HybridThread(threading.Thread):
             return self._is_thread_running
         return locals()
     is_thread_running = property(**is_thread_running())
+
+    def register_notify_on_coroutine_done(self, coroutine_updated_callback):
+        """TODO: Docstring for register_notify_on_coroutine_done.
+        :returns: TODO
+
+        """
+        self.__notify_on_coroutine_done = coroutine_updated_callback
+
+    def update_percentage(self, percentage_completed_callback):
+        """TODO: Docstring for update_percentage.
+
+        :percentage_completed_callback: TODO
+        :returns: TODO
+
+        """
+        self.__percentage_completed_callback = percentage_completed_callback
 
     def set_owner(self, owner_name):
         """ Sets the owner of the thread and same will be passed to the coro and function completion callbacks
@@ -221,6 +238,7 @@ class HybridThread(threading.Thread):
         self.__coroutine_counter += 1
         if self.__notify_on_coroutine_done is not None:
             self.__notify_on_coroutine_done(future, self.__owner)
+            self.__percentage_completed_callback((self.__coroutine_counter/len(self._coroutines_q)*100)
         if len(self._coroutines_q) == self.__coroutine_counter and self.__notify_on_all_done is not None:
             self._coro_results = [future.result() for future in self.__coro_futures]
             self.__notify_on_all_done(self._coro_results, self.__owner, HybridThread.COROUTINES)
