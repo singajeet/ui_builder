@@ -443,13 +443,20 @@ class PackageIndexManager(object):
 
         Args:
             package_name (str): Name of the package that needs to be searched
+
+        Returns:
+            result (tuple of 4 elements): Returns an tuple having below mentioned 4 elements
+                - status (bool): True if package found else False
+                - source_name (str): source name where package was found
+                - package_index (dict): dict of package index
+                - message (str): Error message if not able to find the package
         """
         if package_name is not None:
             for source_name, source in self.__package_sources.items():
                 if self.__package_index_registry[source.name].__contains__(package_name):
-                    return (True, self.__package_index_registry[source.name][package_name], '')
-            return (False, None, 'No such package found...{0}'.format(package_name))
-        return (False, None, 'Can''t accept blank value for package name')
+                    return (True, source, self.__package_index_registry[source.name][package_name], '')
+            return (False, None, None, 'No such package found...{0}'.format(package_name))
+        return (False, None, None, 'Can''t accept blank value for package name')
 
 class PackageManager(object):
     __single_package_manager = None
@@ -592,13 +599,12 @@ class PackageManager(object):
         elif self.archive_manager.is_package_available_in_cache(package_name):
             #Step 1.1
             _package_file = self.archive_manager.get_package_from_cache(package_name)
-
-        #Step 2 - Get source of package from :class:`PackageIndexManager`
+            #Step 2 - Get source of package from :class:`PackageIndexManager`. The result will have following format (Status:[True/False], SourceName, Source Instance, Error Message)
         if _package_file is None:
-            pass
-        #[Place Holder for step 2]
+            package_source = self.package_index_manager.find_package(package_name)
         #Step 2.1 - Package found in index, ask :class:`PackageDownloader` to download package in :attr:`pkg_drop_location`
-        #[Place Holder for step 2.1]
+        if package_source[0] == True:
+            self.downloader.download(package_source[2], package_name[1])
         #Step 2.2 - Get the downloaded physical package file :class:`PackageFile` from :class:`ArchiveManager`
         #[Place Holder for step 2.2]
         return _package_file
