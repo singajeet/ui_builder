@@ -24,7 +24,7 @@ import aiohttp
 import warnings
 from goldfinch import validFileName
 from tinydb import TinyDB, Query, where
-from ui_builder.core.service import package_commands, components
+from ui_builder.core.service import package_commands, components, plugins
 from ui_builder.core.io import filesystem
 from ui_builder.core.provider import tasks
 
@@ -1022,22 +1022,16 @@ class PackageDownloader(object):
         self.config.read(os.path.join(conf_path, constants.CONF_FILE_NAME))
         self.download_src_modules_paths = self.config.get(constants.PACKAGE_DOWNLOADER, constants.DOWNLOAD_SOURCE_HANDLERS)
         self.pkg_drop_in_loc = os.path.abspath(self.config.get(constants.PACKAGE_INSTALLER, constants.PKG_DROP_IN_LOC))
-        self.download_src = {}
-        for src in self.download_src_modules_paths:
-            if os.path.exists(src):
-                module_files = os.listdir(src)
-                if module_files is not None:
-                    for mod_file in module_files:
-                        if os.path.isfile(os.path.join(src, mod_file)):
-                            if mod_file.endswith(constants.MODULE_FILE_POST_FIX):
-                                module_name = mod_file.rstrip(constants.MODULE_FILE_POST_FIX)
-                                module = importlib.import_module(module_name)
-                                for member in dir(module):
-                                    obj = getattr(module, member)
-                                    if inspect.isclass(obj) and issubclass(obj, PackageSource) and obj is not PackageSource:
-                                        self.download_src[obj.source_name] = obj
+        self.download_src = plugins.load(Downloader, self.download_src_modules_paths)
 
-    async def download(self, package_name):
+    async def download(self, source, package_name):
+        """docstring for download"""
+        if self.download_src is None or len(self.download_src) == 0 or not self.download_src.__contains__(source.name):
+            return await self.default_downloader(source, package_name)
+        else:
+            return await self.download_src[source.name].downloader(source, package_name)
+
+    async def default_downloader(self, source, package_name):
         """Downloads the package from source and returns the content to caller of this coroutine
         Args:
             package_name (str): Name of the package that needs to be downloaded
@@ -1051,73 +1045,6 @@ class PackageDownloader(object):
                     fd.write(chunk)
             return pathlib.Path('{0}/{1}.pkg'.format(self.__download_location, package_name))
         return None
-
-    def download(self, src_name, package_name):
-        """TODO: Docstring for download.
-        :returns: TODO
-
-        """
-        if src_name is None or package_name is None:
-            raise Exception('Source or Package name is null')
-        if self.download_src.__contains__(src_name):
-            downloader_class = self.download_src[src_name]
-            downloader = downloader_class()
-            return downloader.download(package_name, self.pkg_drop_in_loc)
-        else:
-            raise Exception('No such download source is configured...{0}'.format(src_name))
-
-    def list_sources(self):
-        """TODO: Docstring for list_sources.
-        :returns: TODO
-
-        """
-        return self.download_src.keys if self.download_src is not None else []
-
-    async def list_packages(self):
-        """TODO: Docstring for list_packages.
-        :returns: TODO
-
-        """
-        packages = []
-        if self.download_src is not None and len(self.download_src) > 0:
-            packages = [src.list() for src in self.download_src.values()]
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(asyncio.gather(packages))
-
-        return packages
-
-    def list_packages_from_src(self, source_name):
-        """TODO: Docstring for list_packages_from_src.
-
-        :source_name: TODO
-        :returns: TODO
-
-        """
-        if source_name is not None and len(self.download_src) > 0:
-            if self.download_src.__contains__(source_name):
-                return self.download_src[source_name].list()
-            else:
-                raise Exception('No such download source configured...{0}'.format(source_name))
-        else:
-            raise Exception('No download source is configured')
-
-    def find_package(self, src_name, pkg_name):
-        """TODO: Docstring for find_package.
-        :src_name: TODO
-        :pkg_name: TODO
-        :returns: TODO
-        """
-        if src_name is not None and pkg_name is not None:
-            if self.download_src.__contains__(src_name):
-                src = self.download_src[src_name]
-                if src is not None:
-                    return src.find_package(pkg_name)
-                else:
-                        raise Exception('Source is not initialized yet...{0}'.format(src_name))
-            else:
-                raise Exception('No such source configured...{0}'.format(src_name))
-        else:
-            raise Exception('Source and Package names can''t be null')
 
 class PackageInstaller(object):
     """Installs the package on local system. This class interacts with :class:`PackageDownloader`
