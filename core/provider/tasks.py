@@ -58,7 +58,7 @@ class HybridThread(threading.Thread):
         self.__stop_thread = threading.Event()
         self.__resume_thread = threading.Event()
         self.__all_coros_done_event = threading.Event()
-        self.__all_funs_done_event = threading.Event()
+        self.__all_funcs_done_event = threading.Event()
         self.__block_coroutine_addition = threading.RLock()
         self.__block_function_addition = threading.RLock()
         self._coroutines_q = []
@@ -69,8 +69,9 @@ class HybridThread(threading.Thread):
         self.__function_futures = []
         self.__notify_on_all_done = notify_on_all_done
         self.__notify_on_coroutine_done = notify_on_coroutine_done
-        self.__update_percentage_callback = None
+        self.__coroutine_completed_percentage_callback = None
         self.__notify_on_function_done = notify_on_function_done
+        self.__function_completed_percentage_callback = None
         self.__coroutine_counter = 0
         self.__function_counter = 0
         self._loop = asyncio.new_event_loop()
@@ -119,21 +120,45 @@ class HybridThread(threading.Thread):
         return locals()
     is_thread_running = property(**is_thread_running())
 
-    def register_notify_on_coroutine_done(self, coroutine_updated_callback):
-        """TODO: Docstring for register_notify_on_coroutine_done.
-        :returns: TODO
+    def register_notify_on_coroutine_completed(self, coroutine_completed_callback):
+        """Registers an function passed as parameter to this method to be called everytime an coroutine is completed
+        Args:
+            coroutine_completed_callback (func): Function to be called on completion of coroutine
+        """
+        self.__notify_on_coroutine_done = coroutine_completed_callback
+
+    def register_coroutine_completed_percentage(self, percentage_completed_callback):
+        """Registers an callback function passed as parameter to this method to be called everytime an coroutine is completed. The callback function will receive an parameter which will provide the percentage of coroutines completed from total number of coroutines. Below is the formula for calculating the percentage::
+
+            >>> coroutine_completed_percentage = ((number_of_coroutines_completed / total_number_of_coroutines_in_queue) * 100)
+
+            The callback function should have the following signature::
+
+                >>> def percentage_completed_callback(percentage_of_completion):
+                    pass
 
         """
-        self.__notify_on_coroutine_done = coroutine_updated_callback
+        self.__coroutine_completed_percentage_callback = percentage_completed_callback
 
-    def update_percentage(self, percentage_completed_callback):
-        """TODO: Docstring for update_percentage.
+    def register_notify_on_function_completed(self, function_completed_callback):
+        """Registers an function passed as parameter to this method to be called everytime an function is completed
+        Args:
+            function_completed_callback (func): Function to be called on completion of functions in queue
+        """
+        self.__notify_on_function_done = function_completed_callback
 
-        :percentage_completed_callback: TODO
-        :returns: TODO
+    def register_function_completed_percentage(self, percentage_completed_callback):
+        """Registers an callback function passed as parameter to this method to be called everytime an function is completed. The callback function will receive an parameter which will provide the percentage of functions completed from total number of functions in queue. Below is the formula for calculating the percentage::
+
+            >>> function_completed_percentage = ((number_of_functions_completed / total_number_of_functions_in_queue) * 100)
+
+            The callback function should have the following signature::
+
+                >>> def percentage_completed_callback(percentage_of_completion):
+                    pass
 
         """
-        self.__percentage_completed_callback = percentage_completed_callback
+        self.__function_completed_percentage_callback = percentage_completed_callback
 
     def set_owner(self, owner_name):
         """ Sets the owner of the thread and same will be passed to the coro and function completion callbacks
@@ -238,13 +263,14 @@ class HybridThread(threading.Thread):
         self.__coroutine_counter += 1
         if self.__notify_on_coroutine_done is not None:
             self.__notify_on_coroutine_done(future, self.__owner)
-            self.__percentage_completed_callback((self.__coroutine_counter/len(self._coroutines_q)*100)
+        if self.__coroutine_completed_percentage_callback is not None:
+            self.__coroutine_completed_percentage_callback((self.__coroutine_counter/len(self._coroutines_q))*100)
         if len(self._coroutines_q) == self.__coroutine_counter and self.__notify_on_all_done is not None:
             self._coro_results = [future.result() for future in self.__coro_futures]
             self.__notify_on_all_done(self._coro_results, self.__owner, HybridThread.COROUTINES)
 
     def wait_for_all_coroutines(self):
-        """Blocks the call until all the coroutines are finished.Once coroutines are done, 
+        """Blocks the call until all the coroutines are finished.Once coroutines are done,
             it clears the coroutines queue so that new can be added for another run
         """
         if not self.__all_coros_done_event.isSet():
@@ -261,16 +287,18 @@ class HybridThread(threading.Thread):
         self.__function_counter += 1
         if self.__notify_on_function_done is not None:
             self.__notify_on_functon_done(future, self.__owner)
+        if self.__function_completed_percentage_callback is not None:
+            self.__function_completed_percentage_callback((self.__function_counter/len(self._function_q))*100)
         if len(self._functions_q) == self.__function_counter and self.__notify_on_all_done is not None:
             self._function_results = [future.result() for future in self.__function_futures]
             self.__notify_on_all_done(self._function_results, self.__owner, HybridThread.FUNCTIONS)
-    
+
     def wait_for_all_functions(self):
         """Blocks the call until all the functions are finished. Once all the functions are done,
             it clears the function queue do that new can be added for another run
         """
-        if not self.__all_funs_done_event.isSet():
-            self.__all_funs_done_event.wait()
+        if not self.__all_funcs_done_event.isSet():
+            self.__all_funcs_done_event.wait()
             self._functions_q.clear()
 
     def run(self):
@@ -320,7 +348,7 @@ class HybridThread(threading.Thread):
             self.__function_futures.clear()
             self._function_results.clear()
             self.__function_counter = 0
-            self.__all_funs_done_event.clear()
+            self.__all_funcs_done_event.clear()
             #run all functions
             for func in self._functions_q:
                 future = self.loop.call_soon_threadsafe(func[0](*func[1], **func[2]))

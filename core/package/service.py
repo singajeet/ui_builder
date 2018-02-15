@@ -397,16 +397,17 @@ class PackageIndexManager(object):
         """This function will fetch a list of all packages under an source
 
         Args:
-            percentage_completed_callback (func): Callback will be called on updation of each package and percentage completion will be passed to callback 
+            percentage_completed_callback (func): Callback will be called on updation of each package and percentage completion will be passed to callback
         """
         if len(self.__package_sources) > 0:
             #Step1 - Get validity status of all current sources configured
             self.__get_index_thread.set_owner('ValidityStatusCheck')
             for source_name, source in self.__package_sources.items():
                 self.__get_index_thread.add_coroutine(self.__get_validity_status, source)
+                if percentage_completed_callback is not None:
+                    #return the percentage completion
+                    self.__get_index_thread.register_coroutine_completed_percentage(percentage_completed_callback)
             self.__get_index_thread.start_forever()
-            #return the percentage completion
-            self.__get_index_thread.update_percentage(percentage_completed_callback)
             #Will wait for coroutines to finish as we need it for next step
             self.__get_index_thread.wait_for_all_coroutines()
             #Step2 - Get cached package index for sources having valid indexes
@@ -415,11 +416,13 @@ class PackageIndexManager(object):
                     self.__package_index_registry[source_name] = self.__package_sources[source_name].get_cached_package_index()
             #Step3 - Refresh cached index from source for those which are not valid
             self.__get_index_thread.set_owner('FetchIndex')
-            self.__get_index_thread.reschedule()
             for source_name, is_valid in self.__source_validity_status.items():
                 if not is_valid:
                     self.__get_index_thread.add_coroutine(self.__get_index, self.__package_sources[source_name])
-                self.__get_index_thread.start_forever()
+                    if percentage_completed_callback is not None:
+                        #return the percentage completion
+                        self.__get_index_thread.register_coroutine_completed_percentage(percentage_completed_callback)
+                self.__get_index_thread.reschedule()
                 #No need to wait here as calling thread will handle it
 
     def get_package_list(self, refresh=False):
@@ -800,10 +803,11 @@ class PackageSource(object):
     """
     SESSION = aiohttp.ClientSession()
 
-    def __init__(self, db_connection, name, uri=None, username=None, password=None, src_type=None, modified_on=None, modified_by=None, security_id=None):
+    def __init__(self, download_location, db_connection, name, uri=None, username=None, password=None, src_type=None, modified_on=None, modified_by=None, security_id=None):
         """Creates new source or load existing source
 
         Args:
+            download_location (str): Local folder where downloaded packages will be stored
             db_connection (object): An open connection to metadata db
             name (str): Name of package source
             uri (str): A web path or file system path to the source index
@@ -815,6 +819,7 @@ class PackageSource(object):
             security_id (uuid): Id of security principle
         """
         self.name = name
+        self.__download_location = download_location
         self.__details = {
             'Name' : name,
             'Uri' : uri,
