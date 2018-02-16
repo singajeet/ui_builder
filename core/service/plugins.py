@@ -1,4 +1,5 @@
 import os
+import importlib
 from ui_builder.core import constants
 
 def load(plugin_type, plugins_path=None):
@@ -17,9 +18,23 @@ def load(plugin_type, plugins_path=None):
                     if os.path.isfile(os.path.join(_path, _plugin_file)):
                         if _plugin_file.endswith(constants.MODULE_FILE_POST_FIX):
                             plugin_name = _plugin_file.rstrip(constants.MODULE_FILE_POST_FIX)
-                            plugin = importlib.import_module(plugin_name)
+                            plugin = import_from_source(plugin_name)
                             for member in dir(plugin):
                                 obj = getattr(plugin, member)
                                 if inspect.isclass(obj) and issubclass(obj, type(plugin_type)) and obj is not type(plugin_type):
                                     plugins[plugin_name] = obj
     return plugins
+
+
+def import_from_source(p_module):
+    """TODO: Docstring for import_from_source.
+    :returns: TODO
+
+    """
+    module_file_path = p_module.__file__
+    module_name = p_module.__name__
+
+    module_spec = importlib.util.spec_from_file_location(module_name, module_file_path)
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+

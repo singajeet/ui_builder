@@ -417,6 +417,15 @@ class PackageIndexManager(object):
         if self.__get_index_thread is not None:
             self.__get_index_thread = None
 
+    def refresh_index(self, percentage_completed_callback=None):
+        """Refresh the local index from the backend index source
+
+        Args:
+            percentage_completed_callback (callable): A callable which be called back to percentage completed status (optional)
+        """
+        self.__update_package_list(percentage_completed_callback)
+        self.__get_index_thread.wait_for_all_coroutines()
+
     def __update_package_list(self, percentage_completed_callback=None):
         """This function will fetch a list of all packages under an source
 
@@ -449,17 +458,21 @@ class PackageIndexManager(object):
                 self.__get_index_thread.reschedule()
                 #No need to wait here as calling thread will handle it
 
-    def get_package_list(self, refresh=False):
+    def get_package_list(self, refresh=False, percentage_completed_callback=None):
         """Returns an list of all packages either from cache or downloading it from source
 
         Args:
             refresh (bool): Whether to have package indexes refreshed before returning the index list (default=False)
         """
+        if percentage_completed_callback is not None and callable(percentage_completed_callback):
+            percentage_completed_callback(0)
         if refresh == True:
-            self.__update_package_list()
+            self.__update_package_list(percentage_completed_callback)
             if self.__get_index_thread is not None:
                 #wait for coroutines to finish
                 self.__get_index_thread.wait_for_all_coroutines()
+        if percentage_completed_callback is not None and callable(percentage_completed_callback):
+            percentage_completed_callback(100)
         return self.__package_index_registry
 
     def find_package(self, package_name):
@@ -531,27 +544,17 @@ class PackageManager(object):
         self.component_manager = components.ComponentManager(self.__db_connection)
         self.package_index_manager = PackageIndexManager(self.__db_connection)
 
-    def packages_name_id_map():
-        doc = "This property provides the mapping of package id to its name for fast lookup"
-        def fget(self):
-            return self._packages_name_id_map
-        def fset(self, value):
-            self._packages_name_id_map = value
-        def fdel(self):
-            del self._packages_name_id_map
-        return locals()
-    packages_name_id_map = property(**packages_name_id_map())
+    @property
+    def packages_name_id_map(self):
+        """This property provides the mapping of package id to its name for fast lookup
+        """
+        return self._packages_name_id_map
 
+    @property
     def packages_map():
-        doc ="Provides the mapping of package id and its in memory instance for faster loading of packages"
-        def fget(self):
-            return self._packages_map
-        def fset(self, value):
-            self._packages_map = value
-        def fdel(self):
-            del self._packages_map
-        return locals()
-    packages_map = property(**packages_map())
+        """Provides the mapping of package id and its in memory instance for faster loading of packages
+        """
+        return self._packages_map
 
     def __load_key_command_bindings(self):
         """Loads the binding details between package manager's commands and associated keys
@@ -624,20 +627,25 @@ class PackageManager(object):
             #Step 1.1
             _package_file = self.archive_manager.get_package_from_cache(package_name)
             #Step 2 - Get source of package from :class:`PackageIndexManager`. The result will have following format (Status:[True/False], SourceName, Source Instance, Error Message)
-        if _package_file is None:
+        if _package_file is not None:
+            return (True, _package_file, '')
+        else:
             package_source = self.package_index_manager.find_package(package_name)
         #Step 2.1 - Package found in index, ask :class:`PackageDownloader` to download package in :attr:`pkg_drop_location`
         if package_source[0] == True:
-            self.downloader.download(package_source[1], package_name[2])
+            self.downloader.download(package_source[1], package_source[2])
         #Step 2.2 - Get the downloaded physical package file :class:`PackageFile` from :class:`ArchiveManager`
-        #[Place Holder for step 2.2]
-        return _package_file
+        if self.archive_manager.is_package_available(package_name):
+            return (True, self.archive_manager.get_package(package_name),'')
+        else:
+            return (False, None, 'Package not available in local and source index')
 
-    def install_package(self, package_name):
+    def install_package(self, package_name, percentage_completed_callback=None):
         """Install package on local file system. This class will use :meth:`__get_package_file` to get the package file
 
         Args:
             package_name (str): Name of the package that needs to be installed
+
 
         Returns:
             status (bool): True or False
@@ -654,22 +662,23 @@ class PackageManager(object):
             #Step 1.2 & 2.2 - Install package
             _status = self.installer.install_package(package_name, _package_file)
             #Step 2.3 - Update caches
-            #[Place Holder for step 2.3]
+            self.archive_manager.move_package_to_cache(package_name)
+            self.load_package(package_name)
             return status
         else:
             #Step 3 - Get local index refreshed from :class:`PackageIndexManager`
-            pass
-            #[Place Holder for Step 3.1] - Call PackageManager.index_refresh()
+            self.package_index_manager.refresh_index()
             #Step 3.2 - Start process again from step 2
             _package_file = self.__get_package_file(package_name)
+            self.packages_map
+            #Install the package if found
+            if _package_file is not None:
+                _status = self.installer.install_package(package_name, _package_file)
+                return _status
+            else:
+                return (False, 'Package not found...{0}'.format(file_name))
 
-        #Install the package if found
-        if _package_file is not None:
-            _status = self.installer.install_package(package_name, _package_file)
-        else:
-            return (False, 'Package not found...{0}'.format(file_name))
-
-    def install_packages(self, package_list=[]):
+    def install_packages(self, package_list=[], percentage_completed_callback=None):
         """Install packages provided as list
         Args:
             package_list (list): Name of packages to be installed
@@ -678,7 +687,7 @@ class PackageManager(object):
         """
         _results = {}
         for package in package_list:
-            _status = self.install_package(package)
+            _status = self.install_package(package, percentage_completed_callback)
             _results[package] = _status
         return _results
 
@@ -1032,6 +1041,18 @@ class DefaultPackageSource(PackageSource):
         """
         return self.__index_list
 
+class Downloader(object):
+    """Base class for downloader. All downloaders should inherit from this class """
+
+    def __init__(self):
+        """Default constructor for an downloader
+        """
+        pass
+
+    async def download_package(self, source, package_name):
+        """docstring for download_package"""
+        pass
+
 class PackageDownloader(object):
     """Docstring for PackageDownloader. """
 
@@ -1055,16 +1076,18 @@ class PackageDownloader(object):
     async def download(self, source, package_name):
         """docstring for download"""
         if self.download_src is None or len(self.download_src) == 0 or not self.download_src.__contains__(source.name):
-            return await self.default_downloader(source, package_name)
+            return await self.download_package(source, package_name)
         else:
-            return await self.download_src[source.name].downloader(source, package_name)
+            _downloader_type = self.download_src[source.name]
+            _downloader = _downloader_type()
+            return await _downloader.download_package(source, package_name)
 
-    async def default_downloader(self, source, package_name):
+    async def download_package(self, source, package_name):
         """Downloads the package from source and returns the content to caller of this coroutine
         Args:
             package_name (str): Name of the package that needs to be downloaded
         """
-        async with PackageSource.SESSION.get(self.__details['Uri'], params={'package_name' : package_name, 'action':'download'}) as _response:
+        async with PackageSource.SESSION.get(source.details['Uri'], params={'package_name' : package_name, 'action':'download'}) as _response:
             with open('{0}/{1}.pkg'.format(self.__download_location, package_name), 'wb') as fd:
                 while True:
                     chunk = _response.content.read(self.__chunk_size)
