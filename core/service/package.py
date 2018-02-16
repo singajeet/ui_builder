@@ -8,7 +8,6 @@
 
 
 #imports ---------------------------------
-from ui_builder.core import utils, init_log, constants
 import configparser
 import uuid
 import os
@@ -17,16 +16,14 @@ import logging
 import shutil
 import glob
 import pathlib
-import importlib
-import inspect
-import asyncio
-import aiohttp
 import warnings
+import aiohttp
 from goldfinch import validFileName
 from tinydb import TinyDB, Query, where
 from ui_builder.core.service import package_commands, components, plugins
 from ui_builder.core.io import filesystem
 from ui_builder.core.provider import tasks
+from ui_builder.core import utils, init_log, constants
 
 #init logs ----------------------------
 init_log.config_logs()
@@ -34,24 +31,28 @@ logger = logging.getLogger(__name__)
 
 
 class PackageInfo(object):
-    """:class:`PackageInfo` class contains information about a package in the Package Managment System
-        A package consist of one or more components grouped logically together. If there is an dependency
-        between components and other packages, same will be defined in this class
+    """:class:`PackageInfo` class contains information about a package in the \
+            Package Managment System. A package consist of one or more components \
+            grouped logically together. If there is an dependency between components \
+            and other packages, same will be defined in this class
     """
 
     def __init__(self, config_file_path=None):
         """:class:`PackageInfo` class have one required parameter
 
         Args:
-            config_file_path (str): Location of the package on the local file system where package is installed
+            config_file_path (str): Location of the package on the local file system \
+                    where package is installed
         """
         if config_file_path is not None:
-            config_file_path = pathlib.Path(config_file_path).absolute() if config_file_path.find('~') < 0 else pathlib.Path(config_file_path).expanduser()
+            config_file_path = pathlib.Path(config_file_path).absolute() \
+                    if config_file_path.find('~') < 0 \
+                    else pathlib.Path(config_file_path).expanduser()
         else:
             raise Exception('Path to config file can''t be none')
-        self.id = None
-        self.location = config_file_path.parent
-        self.config_file = config_file_path
+        self.package_id = None
+        self._location = config_file_path.parent
+        self._config_file = config_file_path
         self.name = None
         self.description = None
         self.type = None
@@ -59,67 +60,66 @@ class PackageInfo(object):
         self.url = None
         self.company = None
         self.version = None
-        self.is_enabled = True
-        self.is_installed = False
+        self._is_enabled = True
+        self._is_installed = False
         self.__comp_name_list = []
         self.__comp_name_id_map = {}
         self.__components = {}
         self.package_dependencies = {}
+        self.__db_connection = None
 
-    def config_file():
-        doc = "Location and name of config file which will be used during installation of the package"
-        def fget(self):
-            return self._config_file
-        def fset(self, value):
-            self._config_file = value
-        def fdel(self):
-            del self._config_file
-        return locals()
-    config_file = property(**config_file())
+    @property
+    def config_file(self):
+        """Location and name of config file which will be used during installation \
+                of the package
+        """
+        return self._config_file
 
-    def location():
-        doc = "The location on file system where this package is installed or will be installed"
-        def fget(self):
-            return self._location
-        def fset(self, value):
-            self._location = value
-        def fdel(self):
-            del self._location
-        return locals()
-    location = property(**location())
+    @config_file.setter
+    def config_file(self, value):
+        self._config_file = value
 
-    def is_enabled():
-        doc = "Flag which denotes whether package is in use or not"
-        def fget(self):
-            return self._is_enabled
-        def fset(self, value):
-            self._is_enabled = value
-        def fdel(self):
-            del self._is_enabled
-        return locals()
-    is_enabled = property(**is_enabled())
+    @property
+    def location(self):
+        """The location on file system where this package is installed \
+                or will be installed
+        """
+        return self._location
 
-    def is_installed():
-        doc = "As name suggest, this flag tells whether package is installed or not"
-        def fget(self):
-            return self._is_installed
-        def fset(self, value):
-            self._is_installed = value
-        def fdel(self):
-            del self._is_installed
-        return locals()
-    is_installed = property(**is_installed())
+    @location.setter
+    def location(self, value):
+        self._location = value
+
+    @property
+    def is_enabled(self):
+        """Flag which denotes whether package is in use or not
+        """
+        return self._is_enabled
+
+    @is_enabled.setter
+    def is_enabled(self, value):
+        self._is_enabled = value
+
+    @property
+    def is_installed(self):
+        """As name suggest, this flag tells whether package is installed or not
+        """
+        return self._is_installed
+
+    @is_installed.setter
+    def is_installed(self, value):
+        self._is_installed = value
 
     def load_install_config(self):
         """Loads package details from config file during installation of this package
         """
-        logger.debug('Looking for package file in...{0}'.format(self.location))
+        logger.debug('Looking for package file in...%s', self.location)
         temp_pkg_files = os.listdir(self.location)
         conf_file = ''
-        for f in temp_pkg_files:
-            if f.endswith(constants.PACKAGE_FILE_EXTENSION):
-                conf_file = f
-                logger.debug('{0} package file found'.format(f))
+        for _file in temp_pkg_files:
+            if _file.endswith(constants.PACKAGE_FILE_EXTENSION):
+                conf_file = _file
+                logger.debug('%s package file found', _file)
                 break
 
         if conf_file == '':
@@ -129,7 +129,7 @@ class PackageInfo(object):
         else:
             self.config_file = utils.CheckedConfigParser()
             self.config_file.read(os.path.join(self.location, conf_file))
-            self.id = self.config_file.get_or_none('Details', 'Id')
+            self.package_id = self.config_file.get_or_none('Details', 'Id')
             self.name = self.config_file.get_or_none('Details', 'Name')
             self.description = self.config_file.get_or_none('Details', 'Description')
             self.type = self.config_file.get_or_none('Details', 'Type')
@@ -137,9 +137,11 @@ class PackageInfo(object):
             self.url = self.config_file.get_or_none('Details', 'Url')
             self.version = self.config_file.get_or_none('Details', 'Version')
             self.company = self.config_file.get_or_none('Details', 'Company')
-            self.__comp_name_list = self.config_file.get_or_none('Details', 'Components').split(',')
-            self.package_dependencies = self.conf_file.items('PackageDependencies') if self.conf_file.has_section('PackageDependencies') else {}
-            logger.info('Package details loaded successfully...{0}'.format(self.name))
+            self.__comp_name_list = self.config_file.get_or_none('Details', \
+                                                                 'Components').split(',')
+            self.package_dependencies = self.config_file.items('PackageDependencies')\
+            if self.config_file.has_section('PackageDependencies') else {}
+            logger.info('Package details loaded successfully...%s', self.name)
             logger.debug('Registring child components now...')
             self.__load_component_install_config()
 
@@ -151,12 +153,13 @@ class PackageInfo(object):
         if self.__comp_name_list is not None:
             for comp_name in self.__comp_name_list:
                 comp_path = os.path.join(self.location, comp_name.strip())
-                comp = ComponentInfo(comp_name.strip(), comp_path)
-                comp.parent_id = self.id
+                comp = components.ComponentInfo(comp_name.strip(), comp_path)
+                comp.parent_id = self.package_id
                 comp.load_install_config()
                 self.__components[comp_name] = comp
                 self.__comp_name_id_map[comp.id] = comp_name
-                logger.debug('Component with Name:{0} and Id:{1} loaded successfully'.format(comp_name, comp.id))
+                logger.debug('Component with Name:%s and Id:%s loaded successfully'\
+                             , comp_name, comp.id)
         else:
             err = 'Can not load components of package...{0}'.format(self.name)
             logger.error(err)
@@ -169,22 +172,27 @@ class PackageInfo(object):
             pkg_id (uuid): A unique id assigned to package
             db_conn (object): An open connection to the metadata database
         """
-        logger.debug('Loading details for package...[{0}] from db'.format(pkg_id))
+        self.__db_connection = db_conn
+        self.package_id = pkg_id
+        logger.debug('Loading details for package...[%s] from db', pkg_id)
         if db_conn is not None:
             pkg_table = db_conn.table('Package')
-            Pkg = Query()
-            pkg_record = pkg_table.get(Pkg['Details']['id'] == pkg_id)
+            pkg = Query()
+            pkg_record = pkg_table.get(pkg['Details']['id'] == pkg_id)
             if pkg_record is not None:
                 self.__dict__ = pkg_record['Details']
                 for comp_id, comp_name in self.__comp_name_id_map:
-                    comp = ComponentInfo(comp_name, '')
+                    comp = components.ComponentInfo(comp_name, '')
                     comp.load_details(comp_id, db_conn)
                     self.__components[comp_name] = comp
-                    logger.debug('Component [{0}] with id [{1}] loaded and restored under pkg [{3}]'.format(comp_name, comp_id, self.name))
-            logger.debug('Successfully loaded details for pkg [{0}]'.format(self.name))
+                    logger.debug('Component [%s] with id [%s] loaded and restored \
+                                 under pkg [%s]', comp_name, comp_id, self.name)
+            logger.debug('Successfully loaded details for pkg [%s]', self.name)
         else:
-            logger.error('Database connection is invalid; Can''t load pkg [{0}] details'.format(pkg_id))
-            raise Exception('Database connection is invalid while loading pkg details...[{0}]'.format(pkg_id))
+            logger.error('Database connection is invalid; Can''t load pkg [%s] details',\
+                         pkg_id)
+            raise Exception('Database connection is invalid while loading pkg \
+                            details...[%s]', pkg_id)
 
     def get_comp_name_list(self):
         """Returns a list containing name of all components available in this package
@@ -194,9 +202,8 @@ class PackageInfo(object):
         """
         if self.__comp_name_list is not None:
             return self.__comp_name_list
-        else:
-            self.load_details()
-            return self.__comp_name_list
+        self.load_details(self.package_id, self.__db_connection)
+        return self.__comp_name_list
 
     def get_components(self):
         """Returns instances of all components which are part of this package
@@ -205,9 +212,6 @@ class PackageInfo(object):
             components ([object]): Returns list of components instances
         """
         if self.__components is not None:
-            return self.__components
-        else:
-            self.load_components()
             return self.__components
         return None
 
@@ -237,8 +241,6 @@ class PackageInfo(object):
         if self.__components is not None and self.__comp_name_id_map is not None:
             if self.__comp_name_id_map[comp_id] is not None:
                 return self.__comp_name_id_map[comp_id]
-            else:
-                return None
         else:
             return None
 
@@ -270,19 +272,22 @@ class PackageIndexManager(object):
         self.__package_sources = self.get_all_sources()
         self.__package_index_registry = {}
         self.__source_validity_status = {}
-        self.__get_index_thread = tasks.HybridThread(name='PackageIndexCoroThread', notify_on_all_done=self.__common_callback)
+        self.__get_index_thread = tasks.HybridThread(name='PackageIndexCoroThread',\
+                                                     notify_on_all_done=self.__common_callback)
         if len(self.__package_sources) <= 0:
-            warnings.warn('No package source are configured. :class:`PackageManager` will not be able to download any packages')
+            warnings.warn('No package source are configured. :class:`PackageManager`\
+                          will not be able to download any packages')
         else:
             self.__update_package_list()
 
     def __common_callback(self, results, owner, _type):
-        """The common coroutine callback, which will be called on completion of all coroutines with owner as one of the parameters
+        """The common coroutine callback, which will be called on completion \
+                of all coroutines with owner as one of the parameters
         """
         if owner == 'ValidityStatusCheck':
             self.__validity_status_callback(results, _type)
         elif owner == 'FetchIndex':
-            self.__update_index_callback(result, _type)
+            self.__update_index_callback(results, _type)
 
     async def __get_index(self, source):
         """Coroutine to get the index from source using async request
@@ -294,7 +299,8 @@ class PackageIndexManager(object):
 
     def __update_index_callback(self, results, _type):
         """This function will be called once all coroutines :func:`__get_index` are done.
-            This callback will receive a list of results in random order as a tuple of two elements (source-name, source-index-list)
+            This callback will receive a list of results in random order as a \
+                    tuple of two elements (source-name, source-index-list)
 
         Args:
             results (list): A 2 element tuple list
@@ -315,11 +321,21 @@ class PackageIndexManager(object):
         """
         _sources = {}
         if self._sources_table is not None:
-            for source in self._sources_table.all():
-                _sources[source.name] = PackageSource(source.name)
+            if self._sources_table.count() > 0:
+                for source in self._sources_table.all():
+                    class_type = source.details['class_type']
+                    class_in_module = source.details['class_in_module']
+                    if class_type is not None and class_in_module is not None:
+                        instance = plugins.load(class_type, class_in_module)
+                        if instance is not None:
+                            _sources[source.name] = instance(source.name)
+                        else:
+                            _sources[source.name] = DefaultPackageSource(source.name)
         return _sources
 
-    def add_source(self, name, uri, username=None, password=None, src_type='Web', modified_on=None, modified_by=None, security_id=None):
+    def add_source(self, download_loc, name, uri=None, username=None, password=None, \
+                   src_type='Web', modified_on=None, modified_by=None, security_id=None, \
+                   class_type=None, class_in_module=None):
         """Add an new source system
         Args:
             name (str): Name of the source
@@ -330,13 +346,21 @@ class PackageIndexManager(object):
             modified_on (date): Datetime when new source is added
             modified_by (str): Name of the user who added the source
             security_id (uuid): The security rules applied to this source
+            class_type (str): Class type of the source \
+                    (should be derived from :class:`PackageSource`)
+            class_in_module (str): Name of the module where the above \
+                    'class_type' can be found
         Returns:
             status (bool): True or False
             message (str): Failure reason
         """
-        new_source = PackageSource(name, uri, username, password, src_type, modified_on, modified_by, security_id)
+        new_source = DefaultPackageSource(download_loc, self.__db_connection, name, \
+                                          uri=uri, username=username, password=password, \
+                                   src_type=src_type, modified_on=modified_on, \
+                                   modified_by=modified_by, security_id=security_id, \
+                                   class_type=class_type, class_in_module=class_in_module)
         status = new_source.save()
-        if status is not None and status[0] == True:
+        if status is not None and status[0] is True:
             self.__package_sources[name] = new_source
         return status
 
@@ -863,7 +887,7 @@ class DefaultPackageSource(PackageSource):
     """
     SESSION = aiohttp.ClientSession()
 
-    def __init__(self, download_location, db_connection, name, uri=None, username=None, password=None, src_type=None, modified_on=None, modified_by=None, security_id=None):
+    def __init__(self, download_location, db_connection, name, uri=None, username=None, password=None, src_type=None, modified_on=None, modified_by=None, security_id=None, class_type=None, class_in_module=None):
         """Creates new source or load existing source
         Args:
             download_location (str): Local folder where downloaded packages will be stored
@@ -876,6 +900,8 @@ class DefaultPackageSource(PackageSource):
             modified_on: Modified on date time
             modified_by: Name of user who havemodified it
             security_id (uuid): Id of security principle
+            class_type (PackageSource): derived class of the package source (should be derived from :class:`PackageSource`
+            class_in_module (str): Name of the module which have above mentioned class_type
         """
         self.name = name
         self.__download_location = download_location
@@ -887,7 +913,9 @@ class DefaultPackageSource(PackageSource):
             'Src_type' : src_type,
             'Modified_On' : modified_on,
             'Modified_By' : modified_by,
-            'Security_Id' : security_id
+            'Security_Id' : security_id,
+            'ClassType': 'DefaultPackageSource',
+            'ClassInModule': 'package'
         }
         self.__db_connection = db_connection
         self.__source_table = self.__db_connection.table('PackageSource')
