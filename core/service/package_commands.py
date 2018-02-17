@@ -9,7 +9,6 @@
 
 from ui_builder.core.provider import commands
 from ui_builder.core.parser import cmd_parser
-from ui_builder.core.package import service
 
 class PackageCommands(object):
     """PackageCommands extends the functionality of the Commands available. It supports the various functions of package system through :class:`Commands` interface. These commands can be invoked from Command Line, Gui, etc with help of :class:`CommandManager` """

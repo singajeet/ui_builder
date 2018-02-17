@@ -1502,3 +1502,12 @@ class ArchiveManager(object):
             file_path = self.get_validated_package_cache_path(package_name)
             zipped_file = filesystem.PackageFile(file_path)
             return zipped_file
+
+class DummyDownloader(Downloader):
+
+    """Docstring for DummyDownloader. """
+
+    def __init__(self):
+        """TODO: to be defined1. """
+
+        
