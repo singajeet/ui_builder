@@ -261,17 +261,19 @@ class PackageIndexManager(object):
             cls.__single_package_index_manager = object.__new__(cls, *args, **kwargs)
         return cls.__single_package_index_manager
 
-    def __init__(self, db_connection):
+    def __init__(self, db_connection, download_location):
         """Initialize :class:`PackageIndexManager` class
 
         Args:
             db_connection (object): An open connection to metadata database
+            download_location (str): location where packages will be downloaded
         """
         self.__db_connection = db_connection
         self._sources_table = db_connection.table('PackageSource')
         self.__package_sources = self.get_all_sources()
         self.__package_index_registry = {}
         self.__source_validity_status = {}
+        self.__download_location = download_location
         self.__get_index_thread = tasks.HybridThread(name='PackageIndexCoroThread',\
                                                      notify_on_all_done=self.__common_callback)
         if len(self.__package_sources) <= 0:
@@ -325,12 +327,15 @@ class PackageIndexManager(object):
                 for source in self._sources_table.all():
                     class_type = source.details['class_type']
                     class_in_module = source.details['class_in_module']
+                    source_object = object()
                     if class_type is not None and class_in_module is not None:
-                        instance = plugins.load(class_type, class_in_module)
-                        if instance is not None:
-                            _sources[source.name] = instance(source.name)
+                        source_object = plugins.load(class_type, class_in_module)
+                        if source_object is not None and callable(source_object):
+                            _sources[source.name] = source_object(source.name)
                         else:
-                            _sources[source.name] = DefaultPackageSource(source.name)
+                            _sources[source.name] = DefaultPackageSource\
+                                    (self.__download_location, \
+                                    self.__db_connection, source.name)
         return _sources
 
     def add_source(self, download_loc, name, uri=None, username=None, password=None, \
@@ -378,8 +383,8 @@ class PackageIndexManager(object):
             src_record = self.__package_sources[name]
             _result = src_record.update(attribute_name, value)
             return _result
-        else:
-            return (False, 'No package source are yet configured')
+            
+        return (False, 'No package source are yet configured')
 
     def remove_source(self, source_name):
         """Removes source from system
@@ -395,8 +400,8 @@ class PackageIndexManager(object):
             result = self._sources_table.remove(Query()['Name'] == source_name)
         if result is None or len(result) <= 0:
             return (False, 'Can''t delete source from the system')
-        else:
-            return (True, 'Source has been deleted - {0}'.format(result))
+            
+        return (True, 'Source has been deleted - {0}'.format(result))
 
     async def __get_validity_status(self, source):
         """docstring for get_validity_status"""
@@ -421,7 +426,8 @@ class PackageIndexManager(object):
         """Refresh the local index from the backend index source
 
         Args:
-            percentage_completed_callback (callable): A callable which be called back to percentage completed status (optional)
+            percentage_completed_callback (callable): A callable which be called \
+                    back to percentage completed status (optional)
         """
         self.__update_package_list(percentage_completed_callback)
         self.__get_index_thread.wait_for_all_coroutines()
@@ -430,7 +436,8 @@ class PackageIndexManager(object):
         """This function will fetch a list of all packages under an source
 
         Args:
-            percentage_completed_callback (func): Callback will be called on updation of each package and percentage completion will be passed to callback
+            percentage_completed_callback (func): Callback will be called on updation \
+                    of each package and percentage completion will be passed to callback
         """
         if len(self.__package_sources) > 0:
             #Step1 - Get validity status of all current sources configured
@@ -439,22 +446,27 @@ class PackageIndexManager(object):
                 self.__get_index_thread.add_coroutine(self.__get_validity_status, source)
                 if percentage_completed_callback is not None:
                     #return the percentage completion
-                    self.__get_index_thread.register_coroutine_completed_percentage(percentage_completed_callback)
+                    self.__get_index_thread.register_coroutine_completed_percentage\
+                            (percentage_completed_callback)
             self.__get_index_thread.start_forever()
             #Will wait for coroutines to finish as we need it for next step
             self.__get_index_thread.wait_for_all_coroutines()
             #Step2 - Get cached package index for sources having valid indexes
             for source_name, is_valid in self.__source_validity_status.items():
                 if is_valid:
-                    self.__package_index_registry[source_name] = self.__package_sources[source_name].get_cached_package_index()
+                    self.__package_index_registry[source_name] = \
+                            self.__package_sources[source_name].get_cached_package_index()
             #Step3 - Refresh cached index from source for those which are not valid
             self.__get_index_thread.set_owner('FetchIndex')
             for source_name, is_valid in self.__source_validity_status.items():
                 if not is_valid:
-                    self.__get_index_thread.add_coroutine(self.__get_index, self.__package_sources[source_name])
+                    self.__get_index_thread\
+                            .add_coroutine(self.__get_index, \
+                                           self.__package_sources[source_name])
                     if percentage_completed_callback is not None:
                         #return the percentage completion
-                        self.__get_index_thread.register_coroutine_completed_percentage(percentage_completed_callback)
+                        self.__get_index_thread\
+                                .register_coroutine_completed_percentage(percentage_completed_callback)
                 self.__get_index_thread.reschedule()
                 #No need to wait here as calling thread will handle it
 
@@ -462,11 +474,12 @@ class PackageIndexManager(object):
         """Returns an list of all packages either from cache or downloading it from source
 
         Args:
-            refresh (bool): Whether to have package indexes refreshed before returning the index list (default=False)
+            refresh (bool): Whether to have package indexes refreshed before \
+                    returning the index list (default=False)
         """
         if percentage_completed_callback is not None and callable(percentage_completed_callback):
             percentage_completed_callback(0)
-        if refresh == True:
+        if refresh:
             self.__update_package_list(percentage_completed_callback)
             if self.__get_index_thread is not None:
                 #wait for coroutines to finish
@@ -490,12 +503,17 @@ class PackageIndexManager(object):
         """
         if package_name is not None:
             for source_name, source in self.__package_sources.items():
-                if self.__package_index_registry[source.name].__contains__(package_name):
-                    return (True, source, self.__package_index_registry[source.name][package_name], '')
+                if self.__package_index_registry[source_name].__contains__(package_name):
+                    return (True, source, \
+                            self.__package_index_registry[source.name][package_name], '')
             return (False, None, None, 'No such package found...{0}'.format(package_name))
         return (False, None, None, 'Can''t accept blank value for package name')
 
 class PackageManager(object):
+    """This class is core in package management system. This manages all other services of 
+        package management system. All sub-components should coordinate with help of this
+        class
+    """
     __single_package_manager = None
 
     def __new__(cls, *args, **kwargs):
@@ -513,28 +531,36 @@ class PackageManager(object):
 
             PackageManager have following core components:
 
-                * :class:`PackageInstaller` - Install the package in system by updating its info in DB
+                * :class:`PackageInstaller` - Install the package in system by updating its \
+                        info in DB
                 * :class:`PackageDownloader` - Downloads the package from relevant source
-                * :class:`ArchiveManager` - Expands the package on local file system during installation
-                                            & keeps copy of uninstalled archived package in its local cache
+                * :class:`ArchiveManager` - Expands the package on local file system during \
+                        installation
+                        & keeps copy of uninstalled archived package in its local cache
                 * :class:`PackageSource` - The source of an package
-                * :class:`PackageIndexManager` - Maintains the index list of all packages (installed & uninstalled both)
+                * :class:`PackageIndexManager` - Maintains the index list of all packages \
+                        (installed & uninstalled both)
 
         Notes: :class:`PackageManager` will work as a service and should have a dedicated thread
             for smooth functionality. The thread will be among other threads of high priority
         """
         logger.info('Starting PackageManager...')
-        self.packages_map = {}
-        self.packages_name_id_map = {}
+        self._packages_map = {}
+        self._packages_name_id_map = {}
         self.key_binding_config = configparser.ConfigParser()
-        self.key_binding_config.read(os.path.join(conf_path, '{0}.cfg'.format(COMMAND_BINDINGS)))
+        self.key_binding_config.read(os.path\
+                                     .join(conf_path, \
+                                           '{0}.cfg'.format(constants.COMMAND_BINDINGS)))
         self.__load_key_command_bindings()
-        logger.debug('Loading PackageManager Configuration...{0}'.format(conf_path))
-        self.id = None
+        logger.debug('Loading PackageManager Configuration...%s', conf_path)
+        self.package_id = None
         self.__config = configparser.ConfigParser()
-        self.__config.read(os.path.join(conf_path,'ui_builder.cfg'))
-        self.pkg_install_location = os.path.abspath(self.__config.get(PACKAGE_INSTALLER, PKG_INSTALL_LOC))
+        self.__config.read(os.path.join(conf_path, 'ui_builder.cfg'))
+        self.pkg_install_location = os.path\
+                .abspath(self.__config.get(constants.PACKAGE_INSTALLER, \
+                                           constants.PKG_INSTALL_LOC))
         ###Setup commands
+        self.__key_to_command_mapping = {}
         self.__db_connection = TinyDB(UI_BUILDER_DB_PATH)
         self.installer = PackageInstaller(conf_path)
         self.commands = package_commands.PackageCommands(self)
@@ -551,8 +577,9 @@ class PackageManager(object):
         return self._packages_name_id_map
 
     @property
-    def packages_map():
-        """Provides the mapping of package id and its in memory instance for faster loading of packages
+    def packages_map(self):
+        """Provides the mapping of package id and its in memory instance for \
+                faster loading of packages
         """
         return self._packages_map
 
@@ -560,7 +587,7 @@ class PackageManager(object):
         """Loads the binding details between package manager's commands and associated keys
             These binding details will be used by the :class:`CommandManager`
         """
-        for key, value in self.key_binding_config.items(PACKAGE_MANAGER):
+        for key, value in self.key_binding_config.items(constants.PACKAGE_MANAGER):
             self.__key_to_command_mapping[key] = value
 
     def load_package(self, pkg_name):
@@ -579,11 +606,11 @@ class PackageManager(object):
         if _pkg is not None:
             pkg = PackageInfo('')
             pkg.load_details(_pkg.id, self.__db_connection)
-            self.packages_name_id_map[_pkg.name]=_pkg.id
+            self.packages_name_id_map[_pkg.name] = _pkg.id
             self.packages_map[_pkg.id] = pkg
             return pkg
-        else:
-            return None
+        
+        return None
 
     def load_packages(self):
         """Load all packages in the in-memory mapping property :attr:`packages_map`
@@ -598,26 +625,34 @@ class PackageManager(object):
         logger.debug('Packages map has been initialized successfully!')
 
     def __get_package_file(self, package_name):
-        """Gets the physical package file from drop-in location, archive cache, index manager or download from source.
+        """Gets the physical package file from drop-in location, archive cache, \
+                index manager or download from source.
             Following workflow will be used to get the package file
 
             1. Request package from :class:`ArchiveManager`-
-                1.1. If available in archive cache, ArchiveManager will return it for installation
-                1.2. :class:`PackageManager` will forward the package to :class:`PackageInstaller` for further installation
-            2. If not found in cache, the request will be forwarded to :class:`PackageIndexManager` to find the source of package
-                2.1. If found in index, an instance of :class:`PackageSource` and request will be forwarded to :class:`PackageDownloader`
-                     to download package from respective source
-                2.2. Once downloaded, request will goto :class:`PackageInstaller` for installation after package unarchived
+                1.1. If available in archive cache, ArchiveManager will return it for \
+                        installation
+                1.2. :class:`PackageManager` will forward the package to \
+                        :class:`PackageInstaller` for further installation
+            2. If not found in cache, the request will be forwarded to \
+                    :class:`PackageIndexManager` to find the source of package
+                2.1. If found in index, an instance of :class:`PackageSource` and \
+                        request will be forwarded to :class:`PackageDownloader`\
+                        to download package from respective source
+                2.2. Once downloaded, request will goto :class:`PackageInstaller` \
+                        for installation after package unarchived
                      by :class:`ArchiveManager`
-                2.3. After installation, :class:`ArchiveManager` and :class:`PackageManager` will update its respective cache
-            3. If not found in local index, an 'index refresh' request will be generated and process will start again
-               from step '2' (once the index is refreshed)
+                2.3. After installation, :class:`ArchiveManager` and :class:`PackageManager` \
+                        will update its respective cache
+            3. If not found in local index, an 'index refresh' request will be generated and \
+                    process will start again from step '2' (once the index is refreshed)
 
         Args:
             package_name (str): Package name for which file needs to be returned
 
         Returns:
-            package_file (PackageFile): An instance of :class:`PackageFile` having package content
+            package_file (PackageFile): An instance of :class:`PackageFile` \
+                    having package content
         """
         #Step 1 - find package in archive manager and install
         _package_file = None
@@ -626,26 +661,30 @@ class PackageManager(object):
         elif self.archive_manager.is_package_available_in_cache(package_name):
             #Step 1.1
             _package_file = self.archive_manager.get_package_from_cache(package_name)
-            #Step 2 - Get source of package from :class:`PackageIndexManager`. The result will have following format (Status:[True/False], SourceName, Source Instance, Error Message)
+            #Step 2 - Get source of package from :class:`PackageIndexManager`. \
+                    #The result will have following format (Status:[True/False], \
+                    #SourceName, Source Instance, Error Message)
         if _package_file is not None:
             return (True, _package_file, '')
         else:
             package_source = self.package_index_manager.find_package(package_name)
-        #Step 2.1 - Package found in index, ask :class:`PackageDownloader` to download package in :attr:`pkg_drop_location`
-        if package_source[0] == True:
+        #Step 2.1 - Package found in index, ask :class:`PackageDownloader` to \
+                #download package in :attr:`pkg_drop_location`
+        if package_source[0]:
             self.downloader.download(package_source[1], package_source[2])
-        #Step 2.2 - Get the downloaded physical package file :class:`PackageFile` from :class:`ArchiveManager`
+        #Step 2.2 - Get the downloaded physical package file :class:`PackageFile` \
+                #from :class:`ArchiveManager`
         if self.archive_manager.is_package_available(package_name):
-            return (True, self.archive_manager.get_package(package_name),'')
-        else:
-            return (False, None, 'Package not available in local and source index')
+            return (True, self.archive_manager.get_package(package_name), '')
+            
+        return (False, None, 'Package not available in local and source index')
 
     def install_package(self, package_name, percentage_completed_callback=None):
-        """Install package on local file system. This class will use :meth:`__get_package_file` to get the package file
+        """Install package on local file system. This class will use \
+                :meth:`__get_package_file` to get the package file
 
         Args:
             package_name (str): Name of the package that needs to be installed
-
 
         Returns:
             status (bool): True or False
@@ -664,10 +703,10 @@ class PackageManager(object):
             #Step 2.3 - Update caches
             self.archive_manager.move_package_to_cache(package_name)
             self.load_package(package_name)
-            return status
+            return _status
         else:
             #Step 3 - Get local index refreshed from :class:`PackageIndexManager`
-            self.package_index_manager.refresh_index()
+            self.package_index_manager.refresh_index(percentage_completed_callback)
             #Step 3.2 - Start process again from step 2
             _package_file = self.__get_package_file(package_name)
             self.packages_map
@@ -675,8 +714,8 @@ class PackageManager(object):
             if _package_file is not None:
                 _status = self.installer.install_package(package_name, _package_file)
                 return _status
-            else:
-                return (False, 'Package not found...{0}'.format(file_name))
+                
+            return (False, 'Package not found...{0}'.format(file_name))
 
     def install_packages(self, package_list=[], percentage_completed_callback=None):
         """Install packages provided as list
