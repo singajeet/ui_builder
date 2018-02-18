@@ -29,39 +29,10 @@ init_log.config_logs()
 logger = logging.getLogger(__name__)
 
 
-class Downloader(object):
-    """Base class for downloader. \
-            All downloaders should inherit from this class 
-    """
-
-    def __init__(self):
-        """Default constructor for an downloader
-        """
-        pass
-
-    async def download_package(self, source, package_name):
-        """docstring for download_package"""
-        pass
 
 class PackageDownloader(object):
     """Docstring for PackageDownloader. """
 
-    __single_package_downloader = None
-
-    def __new__(cls, *args, **kwargs):
-        """Class instance creator
-        """
-        if cls != type(cls.__single_package_downloader):
-            cls.__single_package_downloader = object.__new__(cls, *args, **kwargs)
-        return cls.__single_package_downloader
-
-    def __init__(self, conf_path):
-        """TODO: to be defined1. """
-        self.config = configparser.ConfigParser()
-        self.config.read(os.path.join(conf_path, constants.CONF_FILE_NAME))
-        self.download_src_modules_paths = self.config.get(constants.PACKAGE_DOWNLOADER, constants.DOWNLOAD_SOURCE_HANDLERS)
-        self.pkg_drop_in_loc = os.path.abspath(self.config.get(constants.PACKAGE_INSTALLER, constants.PKG_DROP_IN_LOC))
-        self.download_src = plugins.load(Downloader, self.download_src_modules_paths)
 
     async def download(self, source, package_name):
         """docstring for download"""
