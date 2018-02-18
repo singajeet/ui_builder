@@ -1,5 +1,5 @@
 """
-.. module:: package
+.. module:: models
    :platform: Unix, Windows
    :synopsis: Package management functionality
 
@@ -13,9 +13,10 @@ import logging
 import shutil
 import glob
 import pathlib
+from typing import Dict
 from tinydb import TinyDB, Query, where
 from ui_builder.core import utils, init_log, constants
-from ui_builder.core.service import sessions
+from ui_builder.core.service import sessions, iplugins
 
 #init logs ----------------------------
 init_log.config_logs()
@@ -236,38 +237,11 @@ class PackageInfo(object):
         else:
             return None
 
-class PackageSource(object):
+class PackageSource(iplugins.ISource):
     """Base class for package source"""
 
-    SESSION = sessions.Web().SESSION
-
-    def __init__(self, download_location, db_connection, name):
-        """Base constructor for package source
-        Args:
-            download_location (str): Folder location where package will be downloaded
-            db_connection (object): An open cinnection to database
-            name (str): Name of the package source
-        """
-        self.__download_location = download_location
-        self.__db_connection = db_connection
-        self.name = name
-        self.details = {}
-
-    def save(self):
-        """Saves details of package source to database
-        """
-        pass
-
-    def update(self, attribute_name, value):
-        """Update current sources attribute with new value
-        Args:
-            attribute_name (str): Name of the attribute that needs to be updated
-            value (str): New value that needs to be updated
-        Returns:
-            status (bool): True or False
-            message (str): Failure reasons
-        """
-        pass
+    def __init__(self):
+        super(PackageSource, self).__init__()
 
     async def get_package_index(self):
         """Downloads package index from configured source uri
@@ -296,131 +270,24 @@ class DefaultPackageSource(PackageSource):
     """Represents an package source in package management system
     """
 
-    def __init__(self, download_location, db_connection, name, uri=None, username=None, password=None, src_type=None, modified_on=None, modified_by=None, security_id=None, class_type=None, class_in_module=None):
-        """Creates new source or load existing source
-        Args:
-            download_location (str): Local folder where downloaded packages will be stored
-            db_connection (object): An open connection to metadata db
-            name (str): Name of package source
-            uri (str): A web path or file system path to the source index
-            username (str): Username to access source
-            password (str): Password for accessing source
-            src_type (str): Web or Filesystem
-            modified_on: Modified on date time
-            modified_by: Name of user who havemodified it
-            security_id (uuid): Id of security principle
-            class_type (PackageSource): derived class of the package source (should be derived from :class:`PackageSource`
-            class_in_module (str): Name of the module which have above mentioned class_type
+    def __init__(self):
+        """DefaultPackageSource constructor
         """
-        self.name = name
-        self.__download_location = download_location
-        self.__details = {
-            'Name' : name,
-            'Uri' : uri,
-            'Username' : username,
-            'Password' : password,
-            'Src_type' : src_type,
-            'Modified_On' : modified_on,
-            'Modified_By' : modified_by,
-            'Security_Id' : security_id,
-            'ClassType': 'DefaultPackageSource',
-            'ClassInModule': 'package'
-        }
-        self.__db_connection = db_connection
-        self.__source_table = self.__db_connection.table('PackageSource')
-        _details_in_db={}
-        if self.__source_table is not None:
-            _details_in_db = self.__source_table.get(Query()['Name'] == name)
-            if len(_details_in_db) > 0:
-                self.__details = _details_in_db
+        super(DefaultPackageSource, self).__init__()
+
+    def prepare(self, name: str, db_connection: Any) -> None:
+        super(DefaultPackageSource, self).prepare(name, db_connection)
         self.__index_table = self.__db_connection.table('PackageIndex')
         self.__index_list = {}
         if self.__index_table is not None:
             self.__index_list = self.__index_table.get(Query()['Name'] == name)
 
-    def name():
-        doc = "The name property."
-        def fget(self):
-            return self._name
-        def fset(self, value):
-            self._name = value
-        def fdel(self):
-            del self._name
-        return locals()
-    name = property(**name())
-
-    def uri():
-        doc = "The uri property."
-        def fget(self):
-            return self.__details['Uri']
-        return locals()
-    uri = property(**uri())
-
-    def username():
-        doc = "The username property."
-        def fget(self):
-            return self.__details['Username']
-        return locals()
-    username = property(**username())
-
-    def src_type():
-        doc = "The src_type property."
-        def fget(self):
-            return self.__details['Src_type']
-        return locals()
-    src_type = property(**src_type())
-
-    def security_id():
-        doc = "The security_id property."
-        def fget(self):
-            return self.__details['Security_Id']
-        return locals()
-    security_id = property(**security_id())
-
-    def details():
-        doc = "The details property."
-        def fget(self):
-            return self.__details
-        return locals()
-    details = property(**details())
-
-    def save(self):
-        """Creates a new package source record and saves it in database
-        """
-        src_count = self.__source_table.count(Query()['Name'] == self.name)
-        if src_count <= 0:
-            _result = self.__source_table.insert(self.__details)
-        else:
-            return (False, 'A source with same name already exists - {0}'.format(self.name))
-        if len(_result) > 0:
-            return (True, _result)
-        else:
-            return (False, 'Unable to save package source')
-
-    def update(self, attribute_name, value):
-        """Update current sources attribute with new value
-        Args:
-            attribute_name (str): Name of the attribute that needs to be updated
-            value (str): New value that needs to be updated
-
-        Returns:
-            status (bool): True or False
-            message (str): Failure reasons
-        """
-        self.__details[attribute_name] = value
-        _result = self.__source_table.update(self.__details, Query()['Name'] == self.name)
-        if len(_result) > 0:
-            return (True, _result)
-        else:
-            return (False, 'Unable to update attribute {0} with new value {1}'.format(attribute_name, value))
-
-    async def get_package_index(self):
+    async def get_package_index(self) -> Dict[str]:
         """Downloads package index from configured source uri
-
         Returns:
             package_index (json): Package index dict
         """
-        async with PackageSource.SESSION.get(self.__details['Uri'], params={'action': 'index'}) as _response:
+        async with sessions.Web().SESSION.get(self.__details['Uri'], params={'action': 'index'}) as _response:
             self.__index_list = await _response.json()
             return self.__index_list
 
@@ -429,13 +296,12 @@ class DefaultPackageSource(PackageSource):
         Returns:
             validity_status (bool): Returns True if count match else False
         """
-        async with PackageSource.SESSION.get(self.__details['Uri'], params = {'action': 'count', 'local_index':len(self.__index_list)}) as _response:
+        async with sessions.Web().SESSION.get(self.__details['Uri'], params = {'action': 'count', 'local_index':len(self.__index_list)}) as _response:
             return await _response.json()
 
     def get_cached_package_index(self):
         """Returns the current package index which was already downloaded
             in previous requests
-
         Returns:
             index (dict): Returns an dict of package names, version and dependencies
         """
