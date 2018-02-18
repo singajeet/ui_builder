@@ -7,20 +7,19 @@
 """
 
 #imports ---------------------------------
-import configparser
+import abc
 import os
 import logging
-import shutil
-import glob
 import pathlib
-from typing import Dict
 from tinydb import TinyDB, Query, where
 from ui_builder.core import utils, init_log, constants
-from ui_builder.core.service import sessions, iplugins
+from ui_builder.core.service import iplugins
+from ui_builder.core.service.component import models
+import six
 
 #init logs ----------------------------
 init_log.config_logs()
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class PackageInfo(object):
@@ -106,18 +105,18 @@ class PackageInfo(object):
     def load_install_config(self):
         """Loads package details from config file during installation of this package
         """
-        logger.debug('Looking for package file in...%s', self.location)
+        LOGGER.debug('Looking for package file in...%s', self.location)
         temp_pkg_files = os.listdir(self.location)
         conf_file = ''
         for _file in temp_pkg_files:
             if _file.endswith(constants.PACKAGE_FILE_EXTENSION):
                 conf_file = _file
-                logger.debug('%s package file found', _file)
+                LOGGER.debug('%s package file found', _file)
                 break
 
         if conf_file == '':
             err = 'No config file found for this package'
-            logger.error(err)
+            LOGGER.error(err)
             raise NameError(err)
         else:
             self.config_file = utils.CheckedConfigParser()
@@ -134,8 +133,8 @@ class PackageInfo(object):
                                                                  'Components').split(',')
             self.package_dependencies = self.config_file.items('PackageDependencies')\
             if self.config_file.has_section('PackageDependencies') else {}
-            logger.info('Package details loaded successfully...%s', self.name)
-            logger.debug('Registring child components now...')
+            LOGGER.info('Package details loaded successfully...%s', self.name)
+            LOGGER.debug('Registring child components now...')
             self.__load_component_install_config()
 
     def __load_component_install_config(self):
@@ -146,28 +145,27 @@ class PackageInfo(object):
         if self.__comp_name_list is not None:
             for comp_name in self.__comp_name_list:
                 comp_path = os.path.join(self.location, comp_name.strip())
-                comp = components.ComponentInfo(comp_name.strip(), comp_path)
+                comp = models.ComponentInfo(comp_name.strip(), comp_path)
                 comp.parent_id = self.package_id
                 comp.load_install_config()
                 self.__components[comp_name] = comp
                 self.__comp_name_id_map[comp.id] = comp_name
-                logger.debug('Component with Name:%s and Id:%s loaded successfully'\
+                LOGGER.debug('Component with Name:%s and Id:%s loaded successfully'\
                              , comp_name, comp.id)
         else:
             err = 'Can not load components of package...{0}'.format(self.name)
-            logger.error(err)
+            LOGGER.error(err)
             raise Exception(err)
 
     def load_details(self, pkg_id, db_conn):
         """Load details of package from database after the package has been installed in the system
-
         Args:
             pkg_id (uuid): A unique id assigned to package
             db_conn (object): An open connection to the metadata database
         """
         self.__db_connection = db_conn
         self.package_id = pkg_id
-        logger.debug('Loading details for package...[%s] from db', pkg_id)
+        LOGGER.debug('Loading details for package...[%s] from db', pkg_id)
         if db_conn is not None:
             pkg_table = db_conn.table('Package')
             pkg = Query()
@@ -175,21 +173,20 @@ class PackageInfo(object):
             if pkg_record is not None:
                 self.__dict__ = pkg_record['Details']
                 for comp_id, comp_name in self.__comp_name_id_map:
-                    comp = components.ComponentInfo(comp_name, '')
+                    comp = models.ComponentInfo(comp_name, '')
                     comp.load_details(comp_id, db_conn)
                     self.__components[comp_name] = comp
-                    logger.debug('Component [%s] with id [%s] loaded and restored \
+                    LOGGER.debug('Component [%s] with id [%s] loaded and restored \
                                  under pkg [%s]', comp_name, comp_id, self.name)
-            logger.debug('Successfully loaded details for pkg [%s]', self.name)
+            LOGGER.debug('Successfully loaded details for pkg [%s]', self.name)
         else:
-            logger.error('Database connection is invalid; Can''t load pkg [%s] details',\
+            LOGGER.error('Database connection is invalid; Can''t load pkg [%s] details',\
                          pkg_id)
             raise Exception('Database connection is invalid while loading pkg \
                             details...[%s]', pkg_id)
 
     def get_comp_name_list(self):
         """Returns a list containing name of all components available in this package
-
         Returns:
             comp_name_list ([str]): List of component names available in this package
         """
@@ -200,7 +197,6 @@ class PackageInfo(object):
 
     def get_components(self):
         """Returns instances of all components which are part of this package
-
         Returns:
             components ([object]): Returns list of components instances
         """
@@ -210,24 +206,19 @@ class PackageInfo(object):
 
     def get_component(self, comp_name):
         """Load component based on the name passed as args and return sane
-
         Args:
             comp_name (str): Name of the component which needs to be loaded
-
         Returns:
             An instance of component if found else None
         """
         if self.__comp_name_list is not None:
             return self.__components[comp_name]
-
         return None
 
     def get_component_by_id(self, comp_id):
         """Same as :meth:`get_component` but loads the component based on id
-
         Args:
             comp_id (uuid): The unique id assigned to an component
-
         Returns:
             An instance of component or None
         """
@@ -237,12 +228,14 @@ class PackageInfo(object):
         else:
             return None
 
+@six.add_metaclass(abc.ABCMeta)
 class PackageSource(iplugins.ISource):
     """Base class for package source"""
 
     def __init__(self):
         super(PackageSource, self).__init__()
 
+    @abc.abstractmethod
     async def get_package_index(self):
         """Downloads package index from configured source uri
         Returns:
@@ -250,59 +243,23 @@ class PackageSource(iplugins.ISource):
         """
         pass
 
+    @abc.abstractmethod
     async def get_validity_status(self):
-        """Returns the validity of package index such that if count of package index in source and :attr:`__index_list` matches, it returns True else False
+        """Returns the validity of package index such that if count of \
+                package index in source and :attr:`__index_list` matches, \
+                it returns True else False
         Returns:
             validity_status (bool): Returns True if count match else False
         """
         pass
 
+    @abc.abstractmethod
     def get_cached_package_index(self):
         """Returns the current package index which was already downloaded
             in previous requests
 
         Returns:
-            index (dict): Returns an dict of package names, version and dependencies
+            index (dict): Returns an dict of package names, version and \
+                    dependencies
         """
         pass
-
-class DefaultPackageSource(PackageSource):
-    """Represents an package source in package management system
-    """
-
-    def __init__(self):
-        """DefaultPackageSource constructor
-        """
-        super(DefaultPackageSource, self).__init__()
-
-    def prepare(self, name: str, db_connection: Any) -> None:
-        super(DefaultPackageSource, self).prepare(name, db_connection)
-        self.__index_table = self.__db_connection.table('PackageIndex')
-        self.__index_list = {}
-        if self.__index_table is not None:
-            self.__index_list = self.__index_table.get(Query()['Name'] == name)
-
-    async def get_package_index(self) -> Dict[str]:
-        """Downloads package index from configured source uri
-        Returns:
-            package_index (json): Package index dict
-        """
-        async with sessions.Web().SESSION.get(self.__details['Uri'], params={'action': 'index'}) as _response:
-            self.__index_list = await _response.json()
-            return self.__index_list
-
-    async def get_validity_status(self):
-        """Returns the validity of package index such that if count of package index in source and :attr:`__index_list` matches, it returns True else False
-        Returns:
-            validity_status (bool): Returns True if count match else False
-        """
-        async with sessions.Web().SESSION.get(self.__details['Uri'], params = {'action': 'count', 'local_index':len(self.__index_list)}) as _response:
-            return await _response.json()
-
-    def get_cached_package_index(self):
-        """Returns the current package index which was already downloaded
-            in previous requests
-        Returns:
-            index (dict): Returns an dict of package names, version and dependencies
-        """
-        return self.__index_list

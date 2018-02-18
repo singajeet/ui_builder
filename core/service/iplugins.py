@@ -5,53 +5,61 @@
 
 .. moduleauthor:: Ajeet Singh <singajeet@gmail.com>
 """
+import abc
 from typing import Type, Any
 from pathlib import Path
-import yapsy
+#import yapsy
 from tinydb import Query
-from ui_builder.core import constants
+import six
 
-class ISource(yapsy.IPlugin):
+
+@six.add_metaclass(abc.ABCMeta)
+class ISource(object):
     """Interface for an source system"""
 
-    def __init__(self):
+    def __init__(self, name: str, db_connection: Any):
         """Constructor of ISource should not have any arguments
         """
-        self.__name = None
+        self.__name = name
         self.__details = {}
-        self.__db_connection = None
+        self.__db_connection = db_connection
         self.__source_table = None
+        self.__is_new = False
 
     @property
     def name(self):
         """Name property of source
         """
-        return self._name
+        return self.__name
 
     @property
     def details(self):
         """Details property of source
         """
-        return self._details
+        return self.__details
 
-    def prepare(self, name: str, db_connection:Any) -> None:
+    @abc.abstractmethod
+    def prepare(self) -> None:
         """Prepare the source object to perform further actions
         Args:
             name (str): Unique name of source system
             db_connection (object): An open connection to database
         """
-        if name is None or db_connection is None:
-            raise ValueError('Both name and db connection args are mandatory')
-        self.__name = name
-        self.__db_connection = db_connection
-        self.__source_table = db_connection.table('Source')
-        self.__details = self.__source_table.get(Query()['name'] == name)
+        self.__source_table = self.__db_connection.table('Source')
+        self.__details = self.__source_table\
+                .get(Query()['name'] == self.__name)
         self.__is_new = False
         if len(self.__details) <= 0:
             self.__is_new = True
         elif len(self.__details) > 1:
-            raise LookupError('Inconsistent source table. There should be only one record for a given source. Number of records found: %s' % len(self.__details))
+            raise LookupError(\
+                              'Inconsistent source table. \
+                              There should be only one record \
+                              for a given source. Number of \
+                              records found: %s' \
+                              % len(self.__details))
 
+    @abc.abstractmethod
     def update_details(self, uri:str=None, username:str=None, password:str=None, source_type:str=None, modified_on:str=None, modified_by:str=None, security_id:str=None) -> (bool, str):
         """Update current sources attribute with new value
         Args:
@@ -85,8 +93,10 @@ class ISource(yapsy.IPlugin):
             record_count = self.__source_table.update(self.__details, Query()['name'] == self.name)
         if record_count > 0:
             return (True, '%d record(s) updated' % record_count)
-        return (False, 'Unable to update details in db. If it is a new record, please save it first')
+        return (False, 'Unable to update details in db. \
+                If it is a new record, please save it first')
 
+    @abc.abstractmethod
     def save(self) -> (bool, str):
         """Creates a new source record and saves it in database
         """
@@ -100,7 +110,9 @@ class ISource(yapsy.IPlugin):
         else:
             return (False, 'Unable to create new source record')
 
-class IDownloader(yapsy.IPlugin):
+
+@six.add_metaclass(abc.ABCMeta)
+class IDownloader(object):
     """Interface for all downloaders
     """
 
@@ -119,6 +131,7 @@ class IDownloader(yapsy.IPlugin):
         return self._source
 
     @source.setter
+    @abc.abstractmethod
     def source(self, value):
         self._source = value
 
@@ -129,6 +142,7 @@ class IDownloader(yapsy.IPlugin):
         return self._resource_drop_in_path
 
     @resource_drop_in_path.setter
+    @abc.abstractmethod
     def resource_drop_in_path(self, value):
         self._resource_drop_in_path = value
 
@@ -139,9 +153,11 @@ class IDownloader(yapsy.IPlugin):
         return self._config
 
     @config.setter
+    @abc.abstractmethod
     def config(self, value):
         self._config = value
 
+    @abc.abstractmethod
     async def download(self, source: Type[ISource], resource_name: str) -> Type[Path]:
         """Download method downloads the resource from the source \
                 passed as argument
